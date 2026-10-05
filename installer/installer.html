@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VEYA-AI Setup</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Unbounded:wght@600;800&display=swap">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#050505;
+  --panel:#0a0b08;
+  --card:#10120c;
+  --card2:#171a11;
+  --border:rgba(255,255,255,0.06);
+  --accent:#ccff00;
+  --accent2:#e6ff7a;
+  --glow:rgba(204,255,0,0.4);
+  --green:#ccff00;
+  --red:#ef4444;
+  --text:#f2f7e8;
+  --text2:#9aa38a;
+  --text3:#5c6650;
+  --font:'Inter',system-ui,sans-serif;
+  --display:'Unbounded','Segoe UI',sans-serif;
+  color-scheme:dark;
+}
+html,body{height:100%;overflow:hidden}
+body{
+  font-family:var(--font);
+  background:var(--bg);
+  color:var(--text);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  user-select:none;
+  -webkit-app-region:no-drag;
+}
+body::before{
+  content:'';
+  position:fixed;inset:0;
+  background:
+    radial-gradient(ellipse 60% 40% at 20% 50%, rgba(204,255,0,0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 60% at 80% 30%, rgba(125,219,0,0.06) 0%, transparent 60%);
+  pointer-events:none;z-index:0;
+}
+
+.window{
+  width:680px;height:490px;
+  background:rgba(10,11,8,0.97);
+  border:1px solid rgba(204,255,0,0.25);
+  border-radius:16px;
+  box-shadow:0 0 0 1px rgba(255,255,255,0.04),0 40px 100px rgba(0,0,0,0.8),0 0 60px rgba(204,255,0,0.08);
+  overflow:hidden;
+  display:flex;flex-direction:column;
+  position:relative;z-index:1;
+}
+
+/* Titlebar */
+.titlebar{
+  display:flex;align-items:center;gap:10px;
+  padding:11px 16px;
+  background:rgba(0,0,0,0.4);
+  border-bottom:1px solid var(--border);
+  backdrop-filter:blur(20px);
+  -webkit-app-region:drag;
+  flex-shrink:0;
+}
+.dots{display:flex;gap:7px;-webkit-app-region:no-drag}
+.dot{
+  width:13px;height:13px;border-radius:50%;cursor:pointer;
+  position:relative;transition:filter 0.15s;
+}
+.dot:hover{filter:brightness(1.2)}
+.dot::after{
+  content:'';position:absolute;inset:3px;border-radius:50%;
+  background:rgba(0,0,0,0.3);opacity:0;transition:opacity 0.15s;
+}
+.dot:hover::after{opacity:1}
+.dot-r{background:#ff5f57;box-shadow:0 0 6px #ff5f5788}
+.dot-y{background:#febc2e;box-shadow:0 0 6px #febc2e88}
+.dot-g{background:#28c840;box-shadow:0 0 6px #28c84088}
+.tb-title{
+  flex:1;text-align:center;
+  font-size:12px;color:var(--text3);letter-spacing:0.05em;font-weight:500;
+}
+.tb-right{width:46px}
+
+/* Body */
+.body{display:flex;flex:1;min-height:0;overflow:hidden}
+
+/* Sidebar */
+.sidebar{
+  width:196px;
+  background:rgba(0,0,0,0.3);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;flex-shrink:0;
+  position:relative;overflow:hidden;
+}
+.sidebar::before{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:200px;
+  background:radial-gradient(ellipse at 50% 100%, rgba(204,255,0,0.15) 0%, transparent 70%);
+  pointer-events:none;
+}
+.sb-logo{
+  padding:22px 20px 16px;
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  border-bottom:1px solid var(--border);margin-bottom:8px;
+}
+.hex-wrap{position:relative;width:52px;height:52px}
+.hex-wrap svg{width:100%;height:100%;filter:drop-shadow(0 0 10px rgba(204,255,0,0.45))}
+.hex-wrap svg ellipse{animation:shine 3s ease-in-out infinite}
+@keyframes shine{0%,100%{opacity:.55}50%{opacity:1}}
+.hex-pulse{
+  position:absolute;inset:-8px;border-radius:50%;
+  background:radial-gradient(circle, rgba(204,255,0,0.2) 0%, transparent 70%);
+  animation:pulse 2.5s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{transform:scale(0.9);opacity:0.5}50%{transform:scale(1.1);opacity:1}}
+.sb-name{font-family:var(--display);font-size:15px;font-weight:800;letter-spacing:0.04em;color:var(--text)}
+.sb-name span{color:var(--accent)}
+.sb-ver{font-size:10px;color:var(--text3);letter-spacing:0.05em}
+.step{
+  display:flex;align-items:center;gap:12px;padding:9px 16px;
+  cursor:default;position:relative;transition:background 0.2s;
+}
+.step.active{background:rgba(204,255,0,0.1)}
+.step.active::before{
+  content:'';position:absolute;left:0;top:4px;bottom:4px;width:3px;
+  background:linear-gradient(180deg,var(--accent2),var(--accent));
+  border-radius:0 3px 3px 0;box-shadow:0 0 8px var(--glow);
+}
+.step-num{
+  width:22px;height:22px;border-radius:50%;
+  background:var(--card2);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:700;color:var(--text3);flex-shrink:0;
+  transition:all 0.25s;
+}
+.step.done .step-num{background:rgba(204,255,0,0.15);border-color:rgba(204,255,0,0.4);color:var(--green)}
+.step.active .step-num{
+  background:rgba(204,255,0,0.2);border-color:rgba(204,255,0,0.5);
+  color:var(--accent2);box-shadow:0 0 10px rgba(204,255,0,0.3);
+}
+.step-lbl{font-size:12px;color:var(--text3);font-weight:500}
+.step.active .step-lbl{color:var(--text);font-weight:600}
+.step.done .step-lbl{color:var(--text2)}
+
+/* Content */
+.content{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden}
+.page{display:none;flex-direction:column;flex:1;overflow:hidden}
+.page.active{display:flex}
+
+/* ── WELCOME ── */
+.welcome{padding:24px 24px 0;flex:1;display:flex;flex-direction:column;overflow-y:auto}
+.badge{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(204,255,0,0.12);border:1px solid rgba(204,255,0,0.25);
+  border-radius:20px;padding:4px 12px 4px 8px;
+  font-size:11px;color:#e6ff7a;margin-bottom:14px;width:fit-content;
+}
+.badge-dot{width:6px;height:6px;border-radius:50%;background:#ccff00;box-shadow:0 0 6px var(--glow);animation:pulse 1.5s infinite}
+.w-title{font-family:var(--display);font-size:23px;font-weight:800;line-height:1.15;margin-bottom:8px;letter-spacing:-0.02em}
+.w-title span{background:linear-gradient(135deg,#e6ff7a,#ccff00,#7ddb00);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.w-sub{font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:16px}
+.feat-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:14px}
+.feat{
+  display:flex;align-items:center;gap:11px;
+  background:rgba(255,255,255,0.02);border:1px solid var(--border);
+  border-radius:10px;padding:10px 12px;transition:border-color 0.2s,background 0.2s;
+}
+.feat:hover{border-color:rgba(204,255,0,0.25);background:rgba(204,255,0,0.05)}
+.feat-ic{flex-shrink:0}
+.feat-t{font-size:11px;color:var(--text2);line-height:1.4}
+.feat-t b{color:var(--text);display:block;font-size:11px;margin-bottom:2px;font-weight:600}
+.warn{
+  display:flex;gap:8px;align-items:flex-start;
+  background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.2);
+  border-radius:8px;padding:8px 12px;font-size:11px;color:#d4a800;
+}
+
+/* ── API KEYS ── */
+.ph{padding:20px 24px 0}
+.ph-title{font-family:var(--display);font-size:15px;font-weight:700;margin-bottom:3px;letter-spacing:-0.01em}
+.ph-sub{font-size:11px;color:var(--text2)}
+.ph-div{height:1px;background:var(--border);margin:12px 0}
+.ptabs{display:flex;gap:5px;padding:0 24px;flex-wrap:wrap}
+.ptab{
+  padding:5px 12px;border-radius:7px;font-size:11px;font-weight:500;
+  background:var(--card);border:1px solid var(--border);color:var(--text2);cursor:pointer;
+  transition:all 0.15s;
+}
+.ptab:hover{border-color:rgba(204,255,0,0.3);color:var(--text)}
+.ptab.on{background:rgba(204,255,0,0.15);border-color:rgba(204,255,0,0.4);color:#e6ff7a;font-weight:600}
+.api-form{padding:12px 24px;flex:1;overflow-y:auto}
+.form-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text2);margin-bottom:5px;display:block}
+.form-inp{
+  width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--border);
+  border-radius:8px;padding:9px 12px;color:var(--text);font-size:12px;outline:none;
+  font-family:var(--font);transition:border 0.15s,box-shadow 0.15s;
+}
+.form-inp:focus{border-color:rgba(204,255,0,0.5);box-shadow:0 0 0 3px rgba(204,255,0,0.1)}
+.form-inp::placeholder{color:var(--text3)}
+select.form-inp{cursor:pointer}
+.key-hint{font-size:10px;color:var(--text3);margin-top:4px}
+.key-hint a{color:var(--accent2);text-decoration:none}
+
+/* ── OPTIONS ── */
+.opts{padding:14px 24px;flex:1;overflow-y:auto}
+.path-row{display:flex;gap:7px;margin-bottom:14px}
+.path-row .form-inp{flex:1}
+.btn-sm{
+  padding:9px 12px;background:var(--card2);border:1px solid var(--border);
+  border-radius:8px;font-size:11px;color:var(--text2);cursor:pointer;
+  font-family:var(--font);white-space:nowrap;transition:all 0.15s;
+}
+.btn-sm:hover{border-color:rgba(204,255,0,0.3);color:var(--text)}
+.opt-list{display:flex;flex-direction:column;gap:6px}
+.opt{
+  display:flex;align-items:flex-start;gap:11px;
+  background:rgba(255,255,255,0.02);border:1px solid var(--border);
+  border-radius:9px;padding:9px 13px;cursor:pointer;transition:all 0.15s;
+}
+.opt:hover{border-color:rgba(204,255,0,0.2);background:rgba(204,255,0,0.04)}
+.opt input{accent-color:var(--accent);margin-top:2px;flex-shrink:0;cursor:pointer;width:13px;height:13px}
+.opt-t{font-size:11px}
+.opt-t b{display:block;color:var(--text);margin-bottom:1px;font-weight:600}
+.opt-t span{color:var(--text2)}
+
+/* ── PROGRESS ── */
+.prog-area{padding:16px 24px;flex:1;overflow-y:auto}
+.psteps{display:flex;flex-direction:column;gap:4px;margin-bottom:16px}
+.ps{display:flex;align-items:center;gap:11px;padding:8px 12px;border-radius:7px;font-size:11px}
+.ps.done{background:rgba(204,255,0,0.07);color:var(--text)}
+.ps.run{background:rgba(204,255,0,0.1);color:var(--text)}
+.ps.wait{color:var(--text3)}
+.ps.err{background:rgba(239,68,68,0.08);color:#f87171}
+.ps-ic{font-size:12px;width:16px;text-align:center;flex-shrink:0}
+.ps.run .ps-ic{animation:spin 0.8s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+.prog-bar-wrap{
+  background:rgba(255,255,255,0.05);border-radius:99px;height:7px;overflow:hidden;
+  margin-bottom:7px;box-shadow:inset 0 1px 3px rgba(0,0,0,0.4);
+}
+.prog-bar-fill{
+  height:100%;
+  background:linear-gradient(90deg,var(--accent),var(--accent2),#9dff3a);
+  background-size:200%;border-radius:99px;
+  transition:width 0.5s ease;
+  animation:shimmer 2s linear infinite;
+}
+@keyframes shimmer{0%{background-position:100%}100%{background-position:-100%}}
+.prog-lbl{font-size:10px;color:var(--text3)}
+.err-box{
+  background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);
+  border-radius:8px;padding:10px 13px;font-size:11px;color:#f87171;
+  margin-top:12px;display:none;word-break:break-all;
+}
+
+/* ── DONE ── */
+.done-wrap{
+  flex:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:24px;text-align:center;position:relative;overflow:hidden;
+}
+.particles{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.p{
+  position:absolute;width:4px;height:4px;border-radius:50%;
+  background:var(--accent);animation:float var(--dur,3s) ease-in-out var(--del,0s) infinite;opacity:0;
+}
+@keyframes float{0%{opacity:0;transform:translateY(0) scale(0)}20%{opacity:1}100%{opacity:0;transform:translateY(-120px) scale(0.5)}}
+.done-ring{
+  width:72px;height:72px;border-radius:50%;
+  background:rgba(204,255,0,0.1);border:2px solid rgba(204,255,0,0.3);
+  display:flex;align-items:center;justify-content:center;font-size:32px;
+  margin-bottom:18px;box-shadow:0 0 30px rgba(204,255,0,0.2);
+  animation:popIn 0.4s cubic-bezier(0.34,1.56,0.64,1);position:relative;z-index:1;
+}
+@keyframes popIn{from{transform:scale(0.5);opacity:0}to{transform:scale(1);opacity:1}}
+.done-title{font-family:var(--display);font-size:21px;font-weight:800;margin-bottom:6px;letter-spacing:-0.02em;position:relative;z-index:1}
+.done-sub{font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:22px;max-width:300px;position:relative;z-index:1}
+.done-btns{display:flex;flex-direction:column;gap:7px;width:100%;max-width:260px;position:relative;z-index:1}
+
+/* ── FOOTER ── */
+.footer{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 20px;border-top:1px solid var(--border);
+  background:rgba(0,0,0,0.3);flex-shrink:0;
+}
+.footer-info{font-size:10px;color:var(--text3)}
+.footer-btns{display:flex;gap:7px}
+.btn{
+  padding:7px 20px;border-radius:9px;font-size:12px;font-weight:600;
+  border:none;cursor:pointer;font-family:var(--font);transition:all 0.15s;
+}
+.btn-ghost{background:var(--card2);color:var(--text2);border:1px solid var(--border)}
+.btn-ghost:hover{background:var(--card);color:var(--text);border-color:rgba(204,255,0,0.3)}
+.btn-primary{
+  background:linear-gradient(135deg,#e6ff5c,var(--accent) 55%,#7ddb00);color:#050505;
+  box-shadow:0 4px 15px rgba(204,255,0,0.3);
+}
+.btn-primary:hover{
+  background:linear-gradient(135deg,#f0ff8a,#d8ff3a 55%,#8ee600);
+  box-shadow:0 6px 20px rgba(204,255,0,0.45);transform:translateY(-1px);
+}
+.btn-primary:active{transform:translateY(0)}
+.btn-primary:disabled{opacity:0.35;cursor:not-allowed;transform:none !important;box-shadow:none}
+.btn-success{
+  background:linear-gradient(135deg,#e6ff5c,#ccff00 55%,#7ddb00);color:#050505;width:100%;
+  padding:11px;font-size:13px;box-shadow:0 4px 15px rgba(204,255,0,0.25);
+}
+.btn-success:hover{box-shadow:0 6px 20px rgba(204,255,0,0.4);transform:translateY(-1px)}
+.btn-full{width:100%;padding:9px;font-size:12px}
+
+/* ── VEYA Icons ── */
+.vi{display:inline-block;vertical-align:middle;flex-shrink:0}
+.vi .dot{fill:var(--accent)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.btn-primary .vi .dot,.btn-success .vi .dot{fill:currentColor}
+.feat-ic{width:34px;height:34px;border-radius:10px;background:rgba(204,255,0,0.07);border:1px solid rgba(204,255,0,0.18);display:flex;align-items:center;justify-content:center;color:var(--text);margin-top:0}
+.warn .vi{color:#d4a800;margin-top:1px}
+.key-hint{display:flex;align-items:center;gap:5px}
+.ps-ic{display:flex;align-items:center;justify-content:center;height:16px}
+.ps.done .ps-ic{color:var(--accent)}
+.ps.run .ps-ic{color:var(--accent)}
+.ps.wait .ps-ic{color:var(--text3)}
+.ps.err .ps-ic{color:#f87171}
+.done-ring{color:var(--accent)}
+.step-num .vi .dot{display:none}
+
+/* ── Info button & dialog ── */
+.info-btn{
+  margin:auto 12px 14px;display:flex;align-items:center;gap:8px;
+  padding:8px 10px;border-radius:9px;border:1px solid transparent;background:none;
+  color:var(--text2);font:500 12px var(--font);cursor:pointer;transition:all .15s;position:relative;z-index:1;
+}
+.info-btn:hover{color:var(--text);background:rgba(204,255,0,0.06);border-color:rgba(204,255,0,0.18)}
+.info-btn .vi .dot{display:none}
+.risk-line{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--text2);margin-top:2px}
+.risk-line .vi{color:#d4a800}
+.link-btn{background:none;border:none;padding:0;color:var(--accent);font:600 11px var(--font);cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.link-btn:hover{color:var(--accent2)}
+.modal-back{
+  position:absolute;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;
+  background:rgba(0,0,0,0.62);backdrop-filter:blur(6px);animation:fadeIn .18s ease;padding:20px;
+}
+.modal-back[hidden]{display:none}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes rise{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
+.modal{
+  width:440px;max-width:100%;max-height:100%;display:flex;flex-direction:column;
+  background:#0c0e09;border:1px solid rgba(204,255,0,0.22);border-radius:14px;
+  box-shadow:0 30px 80px rgba(0,0,0,.7),0 0 40px rgba(204,255,0,.06);animation:rise .22s cubic-bezier(.2,.9,.3,1.2);
+}
+.modal-head{display:flex;align-items:center;gap:12px;padding:16px 18px;border-bottom:1px solid var(--border)}
+.modal-ic{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:rgba(204,255,0,0.08);border:1px solid rgba(204,255,0,0.2);color:var(--accent)}
+.modal-title{font-family:var(--display);font-size:14px;font-weight:700}
+.modal-sub{font-size:11px;color:var(--text2);margin-top:2px}
+.modal-x{width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--card2);color:var(--text2);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.modal-x:hover{color:var(--text);border-color:rgba(204,255,0,0.3)}
+.modal-body{padding:14px 18px;overflow-y:auto;display:flex;flex-direction:column;gap:12px}
+.info-sec p{font-size:11.5px;line-height:1.6;color:var(--text2)}
+.info-sec p b{color:var(--text);font-weight:600}
+.info-h{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text);margin-bottom:4px;display:flex;align-items:center;gap:6px}
+.warn-sec{background:rgba(251,191,36,0.05);border:1px solid rgba(251,191,36,0.18);border-radius:10px;padding:10px 12px}
+.warn-sec .info-h{color:#e0b400}
+.info-links{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:7px;border:1px solid var(--border);background:var(--card2);color:var(--text);font:500 11px var(--font);cursor:pointer}
+.chip:hover{border-color:rgba(204,255,0,0.35);color:var(--accent)}
+.modal-foot{display:flex;justify-content:flex-end;padding:12px 18px;border-top:1px solid var(--border)}
+
+/* ── Manage / Uninstall / Options ── */
+.step-manage{display:none}
+body.mode-manage .step{display:none}
+body.mode-manage .step-manage{display:flex}
+.scroll{flex:1;overflow-y:auto;padding:14px 24px}
+.sec-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin:2px 0 7px}
+.dlist{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.drow{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:9px;padding:8px 12px;font-size:12px}
+.drow input{accent-color:var(--accent);width:13px;height:13px}
+.drow b{font-weight:600}
+.drow .muted{color:var(--text2);font-size:11px}
+.drow .sp{flex:1}
+.pill{font-size:10px;font-weight:600;padding:2px 8px;border-radius:99px;border:1px solid var(--border);color:var(--text2);white-space:nowrap}
+.pill.ok{color:var(--accent);border-color:rgba(204,255,0,0.35);background:rgba(204,255,0,0.07)}
+.pill.warn{color:#e0b400;border-color:rgba(251,191,36,0.35);background:rgba(251,191,36,0.06)}
+.pill.bad{color:#f87171;border-color:rgba(239,68,68,0.35);background:rgba(239,68,68,0.06)}
+.note{font-size:11px;color:var(--text2);line-height:1.5}
+.note.warn{color:#e0b400}
+.note.bad{color:#f87171}
+.actions{display:flex;flex-direction:column;gap:8px}
+.action{display:flex;align-items:center;gap:12px;text-align:left;background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:11px;padding:11px 14px;color:var(--text);font:inherit;cursor:pointer;transition:all .15s}
+.action:hover{border-color:rgba(204,255,0,0.3);background:rgba(204,255,0,0.04)}
+.action .a-ic{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:rgba(204,255,0,0.07);border:1px solid rgba(204,255,0,0.18);flex-shrink:0}
+.action b{display:block;font-size:12.5px;font-weight:600;margin-bottom:1px}
+.action span{font-size:11px;color:var(--text2)}
+.action.danger .a-ic{background:rgba(239,68,68,0.07);border-color:rgba(239,68,68,0.25);color:#f87171}
+.action.danger:hover{border-color:rgba(239,68,68,0.4);background:rgba(239,68,68,0.04)}
+.btn-danger{background:#e5484d;color:#fff}
+.btn-danger:hover{background:#ef5b60}
+.btn-danger:disabled{opacity:.4;cursor:not-allowed}
+.ptab .kdot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent);margin-left:6px;vertical-align:middle;box-shadow:0 0 6px var(--glow)}
+.prov-row{display:flex;align-items:center;gap:10px;margin-top:14px;padding-top:12px;border-top:1px solid var(--border)}
+.prov-row .form-inp{width:auto;flex:1}
+.err-actions{display:none;gap:7px;margin-top:8px}
+/* ── Custom dropdown (instead of the white Windows list) ── */
+.vsel{position:relative;width:100%}
+.vsel-btn{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left;cursor:pointer;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font:500 12px var(--font);transition:border .15s,box-shadow .15s}
+.vsel-btn:hover{border-color:rgba(204,255,0,0.3)}
+.vsel.open .vsel-btn,.vsel-btn:focus-visible{outline:none;border-color:rgba(204,255,0,0.5);box-shadow:0 0 0 3px rgba(204,255,0,0.1)}
+.vsel-btn .chev{transition:transform .15s;color:var(--text2);flex-shrink:0}
+.vsel.open .vsel-btn .chev{transform:rotate(180deg)}
+.vsel-list{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:40;display:none;flex-direction:column;gap:2px;padding:4px;background:#0f110b;border:1px solid rgba(204,255,0,0.22);border-radius:9px;box-shadow:0 14px 40px rgba(0,0,0,.6);max-height:200px;overflow-y:auto}
+.vsel.up .vsel-list{top:auto;bottom:calc(100% + 4px)}
+.vsel.open .vsel-list{display:flex}
+.vsel-opt{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;cursor:pointer;font-size:12px;color:var(--text2);border:none;background:none;text-align:left;font-family:var(--font);width:100%}
+.vsel-opt:hover,.vsel-opt.kb{background:rgba(204,255,0,0.07);color:var(--text)}
+.vsel-opt.sel{color:var(--accent);font-weight:600}
+.vsel-opt .tick{width:12px;flex-shrink:0;display:flex}
+.vsel-opt .tag{margin-left:auto;font-size:10px;font-weight:600;color:var(--accent);background:rgba(204,255,0,0.08);border:1px solid rgba(204,255,0,0.22);border-radius:99px;padding:1px 7px}
+.dot{border:none;padding:0}
+.uninst-done{display:none;flex-direction:column;align-items:center;gap:10px;text-align:center;padding-top:30px}
+</style>
+</head>
+<body>
+
+<div class="window">
+
+  <div class="titlebar">
+    <div class="dots">
+      <button class="dot dot-r" id="btnClose" title="Close" aria-label="Close"></button>
+      <button class="dot dot-y" id="btnMin" title="Minimize" aria-label="Minimize"></button>
+      <div class="dot dot-g"></div>
+    </div>
+    <div class="tb-title" id="tbTitle">VEYA-AI Setup</div>
+    <div class="tb-right"></div>
+  </div>
+
+  <div class="body">
+
+    <div class="sidebar">
+      <div class="sb-logo">
+        <div class="hex-wrap">
+          <div class="hex-pulse"></div>
+          <svg viewBox="0 0 100 100" aria-label="VEYA-AI">
+            <defs>
+              <linearGradient id="lg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F0FF8A"/><stop offset="0.5" stop-color="#CCFF00"/><stop offset="1" stop-color="#5FC400"/></linearGradient>
+              <filter id="goo" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3.5"/><feColorMatrix values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7"/></filter>
+            </defs>
+            <g filter="url(#goo)" fill="url(#lg)">
+              <path d="M26 28 L50 72 L74 28" fill="none" stroke="url(#lg)" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="26" cy="28" r="11"/><circle cx="74" cy="28" r="11"/><circle cx="50" cy="73" r="9"/><circle cx="85" cy="15" r="5.5"/>
+            </g>
+            <ellipse cx="22" cy="23" rx="4.5" ry="2.4" transform="rotate(-35 22 23)" fill="#fff" fill-opacity="0.75"/>
+            <ellipse cx="70" cy="23" rx="4" ry="2.2" transform="rotate(-35 70 23)" fill="#fff" fill-opacity="0.6"/>
+          </svg>
+        </div>
+        <div class="sb-name">VEYA<span>AI</span></div>
+        <div class="sb-ver" id="sbVer">VERSION –</div>
+      </div>
+      <div class="step active" id="s1"><div class="step-num" id="sn1">1</div><div class="step-lbl">Welcome</div></div>
+      <div class="step" id="s2"><div class="step-num" id="sn2">2</div><div class="step-lbl">API keys</div></div>
+      <div class="step" id="s3"><div class="step-num" id="sn3">3</div><div class="step-lbl">Options</div></div>
+      <div class="step" id="s4"><div class="step-num" id="sn4">4</div><div class="step-lbl">Installation</div></div>
+      <div class="step" id="s5"><div class="step-num" id="sn5">5</div><div class="step-lbl">Done</div></div>
+      <div class="step step-manage active"><div class="step-num"><i data-ic="tool" data-size="12"></i></div><div class="step-lbl">Manage</div></div>
+      <button class="info-btn" type="button" onclick="openInfo()" aria-haspopup="dialog"><i data-ic="info"></i><span>Info</span></button>
+    </div>
+
+    <div class="content">
+
+      <!-- P0: MANAGE (when already installed) -->
+      <div class="page" id="p0">
+        <div class="ph">
+          <div class="ph-title">VEYA-AI is installed</div>
+          <div class="ph-sub" id="mSub">–</div>
+          <div class="ph-div"></div>
+        </div>
+        <div class="scroll" style="padding-top:0">
+          <div class="sec-lbl">Discord</div>
+          <div class="dlist" id="mDiscords"></div>
+          <div class="sec-lbl">Actions</div>
+          <div class="actions">
+            <button class="action" type="button" onclick="startRepair()">
+              <div class="a-ic"><i data-ic="refresh" data-size="17"></i></div>
+              <div><b>Repair</b><span>Reconnects VEYA to Discord – e.g. if the button is gone after a Discord update.</span></div>
+            </button>
+            <button class="action" type="button" onclick="startWizard()">
+              <div class="a-ic"><i data-ic="import" data-size="17"></i></div>
+              <div><b id="mReinstallTitle">Reinstall</b><span>Change options, API keys or folder.</span></div>
+            </button>
+            <button class="action danger" type="button" onclick="showPage(6)">
+              <div class="a-ic"><i data-ic="uninstall" data-size="17"></i></div>
+              <div><b>Uninstall</b><span>Remove VEYA and restore Discord.</span></div>
+            </button>
+          </div>
+        </div>
+        <div class="footer">
+          <div class="footer-info" id="mDir">–</div>
+          <div class="footer-btns"><button class="btn btn-ghost" onclick="veyaClose()">Close</button></div>
+        </div>
+      </div>
+
+      <!-- P1: WELCOME -->
+      <div class="page" id="p1">
+        <div class="welcome">
+          <div class="badge"><div class="badge-dot"></div> AI integration for Discord</div>
+          <div class="w-title">Welcome to<br><span>VEYA AI</span></div>
+          <div class="w-sub">Your personal AI assistant right inside Discord — visible only to you. Claude, ChatGPT, Gemini, DeepSeek, Grok, Mistral, Groq &amp; OpenRouter.</div>
+          <div class="feat-grid">
+            <div class="feat"><div class="feat-ic"><i data-ic="chat"></i></div><div class="feat-t"><b>AI chat</b>Chat, translate, summarize channels</div></div>
+            <div class="feat"><div class="feat-ic"><i data-ic="spark"></i></div><div class="feat-t"><b>Right-click actions</b>Explain, reply, images &amp; voice messages</div></div>
+            <div class="feat"><div class="feat-ic"><i data-ic="tool"></i></div><div class="feat-t"><b>Server builder</b>Describe it – VEYA builds it</div></div>
+            <div class="feat"><div class="feat-ic"><i data-ic="search"></i></div><div class="feat-t"><b>Server analysis</b>Stats &amp; an AI report</div></div>
+          </div>
+          <div class="risk-line"><i data-ic="warn"></i><span>Unofficial Discord mod · Use at your own risk</span><button type="button" class="link-btn" onclick="openInfo()">Learn more</button></div>
+          <div class="note bad" id="wErr" style="margin-top:8px;display:none"></div>
+        </div>
+        <div class="footer">
+          <div class="footer-info">Step 1 of 5</div>
+          <div class="footer-btns">
+            <button class="btn btn-ghost" id="wBack" style="display:none" onclick="showManage()"><i data-ic="back"></i> Back</button>
+            <button class="btn btn-primary" id="wNext" onclick="go(2)">Next <i data-ic="next"></i></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- P2: API KEYS -->
+      <div class="page" id="p2">
+        <div class="ph">
+          <div class="ph-title">Set up API keys</div>
+          <div class="ph-sub">Optional – you can also add keys later in Discord. They're stored encrypted.</div>
+          <div class="ph-div"></div>
+        </div>
+        <div class="ptabs" id="ptabs" role="tablist"></div>
+        <div class="api-form" id="apiForm"></div>
+        <div class="footer">
+          <div class="footer-info">Step 2 of 5</div>
+          <div class="footer-btns">
+            <button class="btn btn-ghost" onclick="go(1)"><i data-ic="back"></i> Back</button>
+            <button class="btn btn-primary" onclick="go(3)">Next <i data-ic="next"></i></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- P3: OPTIONS -->
+      <div class="page" id="p3">
+        <div class="ph">
+          <div class="ph-title">Install options</div>
+          <div class="ph-sub">Choose folder, Discord version and extras.</div>
+          <div class="ph-div"></div>
+        </div>
+        <div class="opts">
+          <label class="form-lbl" for="installPath">Install folder</label>
+          <div class="path-row" style="margin-bottom:4px">
+            <input class="form-inp" id="installPath" readonly>
+            <button class="btn-sm" type="button" onclick="chooseDir()"><i data-ic="folder" data-size="13"></i> Change</button>
+          </div>
+          <div class="note" id="pathNote" style="margin-bottom:12px">No admin needed – everything stays in your user folder.</div>
+
+          <div class="form-lbl" style="margin-bottom:6px">Discord</div>
+          <div class="dlist" id="dList"></div>
+
+          <div class="form-lbl" style="margin-bottom:6px">Extras</div>
+          <div class="opt-list">
+            <label class="opt"><input type="checkbox" id="opt-desktop" checked><div class="opt-t"><b>Desktop shortcut</b><span>"VEYA-AI" to repair, update and uninstall.</span></div></label>
+            <label class="opt"><input type="checkbox" id="opt-startmenu" checked><div class="opt-t"><b>Start menu entry</b><span>VEYA-AI in the Windows Start menu.</span></div></label>
+            <label class="opt"><input type="checkbox" id="opt-autostart" checked><div class="opt-t"><b>Auto-repair after Discord updates</b><span>Quickly checks on Windows startup whether VEYA is still connected. No background process.</span></div></label>
+            <input type="checkbox" id="opt-examples" hidden>
+          </div>
+        </div>
+        <div class="footer">
+          <div class="footer-info" id="optInfo">Step 3 of 5</div>
+          <div class="footer-btns">
+            <button class="btn btn-ghost" onclick="go(2)"><i data-ic="back"></i> Back</button>
+            <button class="btn btn-primary" id="btnInstall" onclick="startInstall()">Install <i data-ic="check"></i></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- P4: PROGRESS -->
+      <div class="page" id="p4">
+        <div class="ph">
+          <div class="ph-title" id="pTitle">Installing…</div>
+          <div class="ph-sub">Discord will be closed briefly.</div>
+          <div class="ph-div"></div>
+        </div>
+        <div class="prog-area">
+          <div class="psteps" id="pList">
+            <div class="ps wait" id="ps1"><div class="ps-ic"><i data-ic="wait"></i></div><span>Find Discord</span></div>
+            <div class="ps wait" id="ps2"><div class="ps-ic"><i data-ic="wait"></i></div><span>Close Discord</span></div>
+            <div class="ps wait" id="ps3"><div class="ps-ic"><i data-ic="wait"></i></div><span>Copy VEYA files</span></div>
+            <div class="ps wait" id="ps4"><div class="ps-ic"><i data-ic="wait"></i></div><span>Connect to Discord</span></div>
+            <div class="ps wait" id="ps5"><div class="ps-ic"><i data-ic="wait"></i></div><span>Settings &amp; keys (encrypted)</span></div>
+            <div class="ps wait" id="ps6"><div class="ps-ic"><i data-ic="wait"></i></div><span>Shortcuts &amp; auto-repair</span></div>
+            <div class="ps wait" id="ps7"><div class="ps-ic"><i data-ic="wait"></i></div><span>Finish</span></div>
+          </div>
+          <div class="prog-bar-wrap"><div class="prog-bar-fill" id="pBar" style="width:3%"></div></div>
+          <div class="prog-lbl" id="pLbl">Starting…</div>
+          <div class="err-box" id="errBox" role="alert"></div>
+          <div class="err-actions" id="errActions">
+            <button class="btn btn-ghost" onclick="retry()"><i data-ic="refresh"></i> Try again</button>
+            <button class="btn btn-ghost" id="btnLog" onclick="openLog()"><i data-ic="code"></i> Open log</button>
+          </div>
+        </div>
+        <div class="footer">
+          <div class="footer-info" id="pStatus">Please don't close…</div>
+          <div class="footer-btns">
+            <button class="btn btn-primary" id="pNext" disabled onclick="go(5)">Next <i data-ic="next"></i></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- P5: DONE -->
+      <div class="page" id="p5">
+        <div class="done-wrap">
+          <div class="particles" id="particles"></div>
+          <div class="done-ring"><i data-ic="check" data-size="38"></i></div>
+          <div class="done-title" id="doneTitle">Done!</div>
+          <div class="done-sub" id="doneSub">VEYA-AI is installed. You'll find the VEYA button next to the emoji icon in Discord.</div>
+          <div class="done-btns">
+            <button class="btn btn-success" id="btnDiscord" onclick="launchDiscord()"><i data-ic="launch"></i> Launch Discord</button>
+            <button class="btn btn-ghost btn-full" onclick="veyaClose()">Close</button>
+          </div>
+          <div class="info-links" style="justify-content:center;margin-top:14px;position:relative;z-index:1">
+            <button type="button" class="chip" onclick="openLink(LINKS.discord)"><i data-ic="chat" data-size="12"></i> Join the support Discord</button>
+            <button type="button" class="chip" onclick="openLink(LINKS.instagram)"><i data-ic="link" data-size="12"></i> Instagram</button>
+            <button type="button" class="chip" onclick="openLink(LINKS.tiktok)"><i data-ic="link" data-size="12"></i> TikTok</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- P6: UNINSTALL -->
+      <div class="page" id="p6">
+        <div class="ph">
+          <div class="ph-title">Uninstall VEYA-AI</div>
+          <div class="ph-sub">Discord will be restored to its original state.</div>
+          <div class="ph-div"></div>
+        </div>
+        <div class="scroll" style="padding-top:0" id="uForm">
+          <div class="note" style="margin-bottom:12px">This removes the VEYA files, the Discord connection, shortcuts, auto-repair and the entry under Windows → Apps. Discord will be closed briefly.</div>
+          <label class="opt" style="margin-bottom:12px">
+            <input type="checkbox" id="uData">
+            <div class="opt-t"><b>Also delete settings &amp; API keys</b><span>If unchecked, they're kept in case you reinstall VEYA later. Chat history lives in Discord itself and won't be removed.</span></div>
+          </label>
+          <div class="prog-bar-wrap" id="uBarWrap" style="display:none"><div class="prog-bar-fill" id="uBar" style="width:3%"></div></div>
+          <div class="prog-lbl" id="uLbl"></div>
+          <div class="err-box" id="uErr" role="alert"></div>
+        </div>
+        <div class="uninst-done" id="uDone">
+          <div class="done-ring"><i data-ic="check" data-size="34"></i></div>
+          <div class="done-title">VEYA-AI has been removed</div>
+          <div class="done-sub">Discord is back to normal. Thanks for trying VEYA!</div>
+        </div>
+        <div class="footer">
+          <div class="footer-info">Discord stays installed.</div>
+          <div class="footer-btns" id="uBtns">
+            <button class="btn btn-ghost" id="uCancel" onclick="leaveUninstall()">Cancel</button>
+            <button class="btn btn-danger" id="uGo" onclick="startUninstall()"><i data-ic="uninstall"></i> Uninstall</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- INFO DIALOG -->
+  <div class="modal-back" id="infoModal" hidden onclick="if(event.target===this)closeInfo()">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
+      <div class="modal-head">
+        <div class="modal-ic"><i data-ic="info" data-size="18"></i></div>
+        <div style="flex:1;min-width:0">
+          <div class="modal-title" id="infoTitle">About VEYA-AI</div>
+          <div class="modal-sub" id="infoVer">unofficial Vencord build</div>
+        </div>
+        <button class="modal-x" type="button" onclick="closeInfo()" aria-label="Close"><i data-ic="close" data-size="15"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="info-sec">
+          <div class="info-h">What is VEYA-AI?</div>
+          <p>A build of the Discord client mod <b>Vencord</b> with an AI built in: AI chat that reads the open channel, right-click actions, a writing helper, a server builder and server analysis. Plugins and themes are managed through Vencord as usual.</p>
+        </div>
+        <div class="info-sec warn-sec">
+          <div class="info-h"><i data-ic="warn" data-size="13"></i> Use at your own risk</div>
+          <p>VEYA-AI is unofficial and is neither supported nor reviewed by Discord. Client mods violate Discord's Terms of Service – in the worst case your account can be banned.</p>
+        </div>
+        <div class="info-sec">
+          <div class="info-h">Privacy</div>
+          <p>API keys are stored with Windows encryption – only your Windows account can read them. Messages to VEYA go only to the AI provider you choose. There's no VEYA server in between.</p>
+        </div>
+        <div class="info-sec">
+          <div class="info-h">Community &amp; support</div>
+          <p>Questions, bugs or ideas? Join the support Discord or follow VEYA for updates.</p>
+          <div class="info-links">
+            <button type="button" class="chip" onclick="openLink(LINKS.discord)"><i data-ic="chat" data-size="12"></i> Support Discord</button>
+            <button type="button" class="chip" onclick="openLink(LINKS.instagram)"><i data-ic="link" data-size="12"></i> Instagram @veya_ai_</button>
+            <button type="button" class="chip" onclick="openLink(LINKS.tiktok)"><i data-ic="link" data-size="12"></i> TikTok @veya_ai_</button>
+          </div>
+        </div>
+        <div class="info-sec">
+          <div class="info-h">License</div>
+          <p>Based on Vencord, licensed under the GNU GPL-3.0. VEYA-AI uses the same license and is free.</p>
+          <div class="info-links">
+            <button type="button" class="chip" onclick="openLink(LINKS.vencord)"><i data-ic="link" data-size="12"></i> Vencord</button>
+            <button type="button" class="chip" onclick="openLink(LINKS.source)"><i data-ic="link" data-size="12"></i> Source code</button>
+            <button type="button" class="chip" onclick="openLink(LINKS.license)"><i data-ic="link" data-size="12"></i> GPL-3.0</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-primary" type="button" onclick="closeInfo()">Got it</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── VEYA icon set (source: assets/veya-icons.json · node scripts/syncIcons.mjs) ──
+const VEYA_ICONS = {"chat":{"d":"M7.5 4h9A2.5 2.5 0 0 1 19 6.5v6A2.5 2.5 0 0 1 16.5 15H11l-4 4v-4h.5A2.5 2.5 0 0 1 5 12.5v-6A2.5 2.5 0 0 1 7.5 4z M9 9.5h6","dot":[21.2,3.2,1.6]},"plug":{"d":"M9 3v4M15 3v4M7 7h10v3a5 5 0 0 1-10 0V7zM12 15v6","dot":[19.5,4.5,1.8]},"palette":{"d":"M12 3a9 9 0 1 0 0 18c1.2 0 1.8-.8 1.8-1.8 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.8 1.8-1.8H17a4 4 0 0 0 4-4C21 6.6 17 3 12 3z","fill":[[10,7.5,1.1],[14.5,7.5,1.1]],"dot":[7.5,11.5,1.6]},"spark":{"d":"M11 3c.6 4.2 2.8 6.4 7 7-4.2.6-6.4 2.8-7 7-.6-4.2-2.8-6.4-7-7 4.2-.6 6.4-2.8 7-7z","dot":[18.5,19,2]},"tool":{"d":"M14.5 5.5a4 4 0 0 0-5 5L4 16l4 4 5.5-5.5a4 4 0 0 0 5-5l-2.5 2.5-2.5-.5-.5-2.5z","dot":[19.5,19.5,1.8]},"brush":{"d":"M19 3.5 10.5 12M10.5 12l1.5 1.5M9.3 13.3c-2 0-3.5 1.5-3.5 3.5 0 1.5-1 2.5-2.3 3 3 .6 7.3-.4 7.3-4 0-1-.6-2-1.5-2.5z","dot":[5.5,5.5,1.8]},"key":{"d":"M11 12l8-8M16 7l2.5 2.5M14 9l2 2","ring":[[8,15,4]],"dot":[19.5,19.5,1.8]},"import":{"d":"M12 3v11M7.5 9.5 12 14l4.5-4.5M4 15v3.5A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V15"},"export":{"d":"M12 14V3M7.5 7.5 12 3l4.5 4.5M4 15v3.5A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V15"},"search":{"d":"M20 20l-4.5-4.5","ring":[[11,11,6]]},"save":{"d":"M6 4h10l3 3v12a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zM8.5 4v4.5h6V4M8 20v-5.5h8V20"},"eye":{"d":"M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z","dot":[12,12,2.6]},"folder":{"d":"M3.5 7A1.5 1.5 0 0 1 5 5.5h4l2 2h8A1.5 1.5 0 0 1 20.5 9v8.5A1.5 1.5 0 0 1 19 19H5a1.5 1.5 0 0 1-1.5-1.5V7z"},"trash":{"d":"M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13M10 11v5M14 11v5"},"close":{"d":"M6 6l12 12M18 6 6 18"},"check":{"d":"M5 12.5l4.5 4.5L19 7.5"},"warn":{"d":"M12 4 21 19.5H3L12 4zM12 10v4","fill":[[12,16.8,1.1]]},"link":{"d":"M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"},"next":{"d":"M5 12h13M13 6l6 6-6 6"},"back":{"d":"M19 12H6M11 6l-6 6 6 6"},"send":{"d":"M12 19V6M6 11l6-6 6 6"},"launch":{"d":"M7 17 17 7M9 7h8v8","dot":[5.5,18.5,1.8]},"wait":{"d":"","ring":[[12,12,3.5]]},"spinner":{"d":"M12 4a8 8 0 0 1 8 8","ring":[[12,12,8]],"ringOpacity":0.2},"error":{"d":"M9 9l6 6M15 9l-6 6","ring":[[12,12,8.5]]},"done":{"d":"M8 12.3l2.8 2.8L16 9.6","ring":[[12,12,8.5]],"dot":[19.5,4.5,1.8]},"info":{"d":"M12 11v5.5","ring":[[12,12,8.5]],"fill":[[12,7.8,1.15]]},"store":{"d":"M5 8h14l-1 12H6L5 8zM9 8V6.5a3 3 0 0 1 6 0V8","dot":[20,4,1.7]},"summary":{"d":"M5 6h14M5 10h14M5 14h9M5 18h6","dot":[18,17.5,2]},"translate":{"d":"M4 5h9M8.5 3v2M6 5c.6 3 2.6 5.6 5.5 7M11 5c-.6 3.4-3 6.4-6.5 8M13 20l4-9 4 9M14.4 17h5.2"},"reply":{"d":"M10 8 5 12.5l5 4.5M5 12.5h9a5 5 0 0 1 5 5V19"},"refresh":{"d":"M19.5 12A7.5 7.5 0 1 1 17 6.4M19.5 4v4.5H15","dot":[12,12,1.8]},"shield":{"d":"M12 3 19.5 6v5.5c0 4.6-3.2 8.3-7.5 9.5-4.3-1.2-7.5-4.9-7.5-9.5V6L12 3zM9 12l2.2 2.2L15.5 10"},"globe":{"d":"M3.5 12h17M12 3.5c2.4 2.3 3.6 5.2 3.6 8.5s-1.2 6.2-3.6 8.5M12 3.5C9.6 5.8 8.4 8.7 8.4 12s1.2 6.2 3.6 8.5","ring":[[12,12,8.5]]},"code":{"d":"M9 8l-4 4 4 4M15 8l4 4-4 4","dot":[12,19.5,1.6]},"power":{"d":"M12 3.5v7M7 6.2a7.5 7.5 0 1 0 10 0"},"copy":{"d":"M9 9h9.5a1.5 1.5 0 0 1 1.5 1.5V19a1.5 1.5 0 0 1-1.5 1.5H10A1.5 1.5 0 0 1 8.5 19V9.5M15.5 9V5.5A1.5 1.5 0 0 0 14 4H5.5A1.5 1.5 0 0 0 4 5.5V14a1.5 1.5 0 0 0 1.5 1.5H8.5"},"uninstall":{"d":"M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13M10 11l4 4M14 11l-4 4"}};
+function icon(name, size = 16) {
+    const x = VEYA_ICONS[name]; if (!x) return '';
+    let o = `<svg class="vi" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">`;
+    (x.ring || []).forEach(([cx, cy, r]) => o += `<circle cx="${cx}" cy="${cy}" r="${r}"${x.ringOpacity ? ` stroke-opacity="${x.ringOpacity}"` : ''}/>`);
+    if (x.d) o += `<path d="${x.d}"/>`;
+    (x.fill || []).forEach(([cx, cy, r]) => o += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="currentColor" stroke="none"/>`);
+    if (x.dot) o += `<circle class="dot" cx="${x.dot[0]}" cy="${x.dot[1]}" r="${x.dot[2]}" stroke="none"/>`;
+    return o + '</svg>';
+}
+function renderIcons(root = document) {
+    root.querySelectorAll('i[data-ic]').forEach(el => {
+        const size = +(el.dataset.size || (el.closest('.feat-ic') ? 18 : el.closest('.btn') ? 15 : el.closest('.key-hint') ? 12 : 16));
+        el.outerHTML = icon(el.dataset.ic, size);
+    });
+}
+
+// ── Links (point the source link at your repository – GPL-3.0 requires the code to be available) ──
+const LINKS = {
+    vencord: "https://github.com/Vendicated/Vencord",
+    source:  "https://github.com/getveya/VEYA-AI",
+    license: "https://www.gnu.org/licenses/gpl-3.0.html",
+    discord: "https://discord.gg/veya-ai",
+    instagram: "https://www.instagram.com/veya_ai_/",
+    tiktok: "https://www.tiktok.com/@veya_ai_",
+};
+
+const PROVIDERS = [
+    { id: "claude",     label: "Claude",     name: "Claude API key (Anthropic)", hint: "sk-ant-…", url: "https://console.anthropic.com/settings/keys", urlText: "console.anthropic.com/settings/keys",
+      models: [["auto", "Auto – best available (recommended)"], ["claude-sonnet-4-5", "claude-sonnet-4-5"], ["claude-opus-4-1", "claude-opus-4-1 (most capable, pricier)"], ["claude-haiku-4-5", "claude-haiku-4-5 (fast & cheap)"]] },
+    { id: "openai",     label: "ChatGPT",    name: "OpenAI API key", hint: "sk-…", url: "https://platform.openai.com/api-keys", urlText: "platform.openai.com/api-keys",
+      models: [["auto", "Auto – best available (recommended)"], ["gpt-4.1-mini", "gpt-4.1-mini"], ["gpt-4.1", "gpt-4.1"], ["gpt-4o-mini", "gpt-4o-mini"]] },
+    { id: "gemini",     label: "Gemini",     name: "Google Gemini API key (free tier)", hint: "AIza…", url: "https://aistudio.google.com/app/apikey", urlText: "aistudio.google.com/app/apikey",
+      models: [["auto", "Auto – best available (recommended)"], ["gemini-flash-latest", "gemini-flash-latest"], ["gemini-pro-latest", "gemini-pro-latest"]] },
+    { id: "deepseek",   label: "DeepSeek",   name: "DeepSeek API key", hint: "sk-…", url: "https://platform.deepseek.com/api_keys", urlText: "platform.deepseek.com/api_keys",
+      models: [["auto", "Auto – best available (recommended)"], ["deepseek-chat", "deepseek-chat"], ["deepseek-reasoner", "deepseek-reasoner"]] },
+    { id: "xai",        label: "Grok",       name: "xAI (Grok) API key", hint: "xai-…", url: "https://console.x.ai", urlText: "console.x.ai",
+      models: [["auto", "Auto – best available (recommended)"], ["grok-4", "grok-4"]] },
+    { id: "mistral",    label: "Mistral",    name: "Mistral API key (free tier)", hint: "…", url: "https://console.mistral.ai/api-keys", urlText: "console.mistral.ai/api-keys",
+      models: [["auto", "Auto – best available (recommended)"], ["mistral-medium-latest", "mistral-medium-latest"], ["mistral-large-latest", "mistral-large-latest"], ["mistral-small-latest", "mistral-small-latest"]] },
+    { id: "groq",       label: "Groq",       name: "Groq API key (free tier, very fast)", hint: "gsk_…", url: "https://console.groq.com/keys", urlText: "console.groq.com/keys",
+      models: [["auto", "Auto – best available (recommended)"], ["llama-3.3-70b-versatile", "llama-3.3-70b-versatile"], ["openai/gpt-oss-120b", "openai/gpt-oss-120b"]] },
+    { id: "openrouter", label: "OpenRouter", name: "OpenRouter API key (hundreds of models)", hint: "sk-or-…", url: "https://openrouter.ai/keys", urlText: "openrouter.ai/keys",
+      models: [["auto", "Auto – best available (recommended)"], ["openrouter/auto", "openrouter/auto"]] },
+];
+
+const $ = id => document.getElementById(id);
+const hasApi = !!window.veya;
+let state = null;
+let cur = 1;
+let installDir = "";
+let lastLog = null;
+let lastMode = "install";
+let activeTab = "claude";
+
+// ── Window ──────────────────────────────────────────────────────────────
+function veyaClose() { if (hasApi) window.veya.close(); }
+$('btnClose').addEventListener('click', veyaClose);
+$('btnMin').addEventListener('click', () => hasApi && window.veya.minimize());
+function openLink(url) { if (hasApi) window.veya.openExternal(url); else window.open(url, '_blank', 'noopener'); }
+
+// ── Info dialog ─────────────────────────────────────────────────────────
+let lastFocus = null;
+function openInfo() { lastFocus = document.activeElement; $('infoModal').hidden = false; document.querySelector('.modal-x').focus(); }
+function closeInfo() { $('infoModal').hidden = true; if (lastFocus) lastFocus.focus(); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('infoModal').hidden) closeInfo(); });
+
+// ── Pages ───────────────────────────────────────────────────────────────
+function showPage(n) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    $('p' + n).classList.add('active');
+    document.body.classList.toggle('mode-manage', n === 0 || n === 6);
+    cur = n;
+}
+
+function go(n) {
+    showPage(n);
+    for (let i = 1; i <= 5; i++) {
+        const step = $('s' + i), num = $('sn' + i);
+        step.classList.remove('active', 'done');
+        if (i < n) { step.classList.add('done'); num.innerHTML = icon('check', 12); }
+        else { if (i === n) step.classList.add('active'); num.textContent = i; }
+    }
+    if (n === 5) spawnParticles();
+}
+
+function startWizard() { $('wBack').style.display = state && state.installed ? '' : 'none'; go(1); }
+function showManage() { renderManage(); showPage(0); }
+
+// ── Discord status ───────────────────────────────────────────────────────
+const STATE_PILL = {
+    veya:    ['ok', 'VEYA active'],
+    clean:   ['warn', 'Not connected'],
+    other:   ['warn', 'Other mod active'],
+    missing: ['', 'Not installed'],
+};
+
+function discordRow(d, withCheckbox) {
+    const [cls, text] = STATE_PILL[d.state] || ['', d.state];
+    const checked = withCheckbox && d.found && (!state.flavors || state.flavors.includes(d.id) || d.id === 'stable');
+    return `<label class="drow"${d.found ? '' : ' style="opacity:.5"'}>
+        ${withCheckbox ? `<input type="checkbox" data-flavor="${d.id}" ${d.found ? '' : 'disabled'} ${checked ? 'checked' : ''}>` : ''}
+        <div><b>${d.name}</b> <span class="muted">${d.version ? 'v' + d.version : ''}</span></div>
+        <div class="sp"></div><span class="pill ${cls}">${text}</span></label>`;
+}
+
+function renderDiscordList() {
+    $('dList').innerHTML = state.discords.map(d => discordRow(d, true)).join('');
+    const other = state.discords.some(d => d.found && d.state === 'other');
+    const none = !state.discords.some(d => d.found);
+    let note = '';
+    if (none) note = '<div class="note bad">Discord was not found. Install Discord from discord.com first and start it once.</div>';
+    else if (other) note = '<div class="note warn">Another mod (e.g. regular Vencord) is active. It will be replaced by VEYA – your Vencord settings are kept.</div>';
+    $('dList').insertAdjacentHTML('beforeend', note);
+    $('dList').querySelectorAll('input').forEach(i => i.addEventListener('change', updateInstallBtn));
+    updateInstallBtn();
+}
+
+function selectedFlavors() { return [...document.querySelectorAll('#dList input[data-flavor]:checked')].map(i => i.dataset.flavor); }
+function updateInstallBtn() {
+    const ok = selectedFlavors().length > 0 && (!state || state.hasPayload) && installDir;
+    $('btnInstall').disabled = !ok;
+    $('optInfo').textContent = state && !state.hasPayload ? 'Build missing – see note' : 'Step 3 of 5';
+}
+
+function renderManage() {
+    const v = state.installedVersion;
+    const newer = v && state.version && v !== state.version;
+    $('mSub').textContent = newer ? `Installed: v${v} · This installer contains v${state.version}` : `Version ${v || '–'}`;
+    $('mReinstallTitle').textContent = newer ? `Update to v${state.version}` : 'Reinstall';
+    $('mDiscords').innerHTML = state.discords.filter(d => d.found).map(d => discordRow(d, false)).join('')
+        || '<div class="note bad">Discord wasn\'t found.</div>';
+    const needsRepair = state.discords.some(d => d.found && (state.flavors || []).includes(d.id) && d.state !== 'veya');
+    if (needsRepair) $('mDiscords').insertAdjacentHTML('beforeend', '<div class="note warn">Discord was updated and is no longer connected. Click "Repair".</div>');
+    $('mDir').textContent = state.installDir;
+}
+
+// ── API keys ────────────────────────────────────────────────────────────────
+function renderApiForm() {
+    $('ptabs').innerHTML = PROVIDERS.map(p => `<button type="button" role="tab" class="ptab${p.id === activeTab ? ' on' : ''}" data-p="${p.id}">${p.label}<span class="kdot" id="kd-${p.id}" style="display:none"></span></button>`).join('');
+    $('apiForm').innerHTML = PROVIDERS.map(p => `
+        <div data-pane="${p.id}" style="${p.id === activeTab ? '' : 'display:none'}">
+          <div style="margin-bottom:12px">
+            <label class="form-lbl" for="key-${p.id}">${p.name}</label>
+            <input class="form-inp" id="key-${p.id}" type="password" autocomplete="off" spellcheck="false" placeholder="${p.hint}">
+            <div class="key-hint"><i data-ic="link"></i> <a href="#" data-url="${p.url}">${p.urlText}</a></div>
+          </div>
+          <div>
+            <label class="form-lbl" for="model-${p.id}">Model</label>
+            <select class="form-inp" id="model-${p.id}" style="cursor:pointer">${p.models.map(([v, t]) => `<option value="${v}">${t}</option>`).join('')}</select>
+          </div>
+        </div>`).join('') + `
+        <div class="prov-row">
+          <label class="form-lbl" for="defProv" style="margin:0;white-space:nowrap">Default provider</label>
+          <select class="form-inp" id="defProv">${PROVIDERS.map(p => `<option value="${p.id}">${p.label}</option>`).join('')}</select>
+        </div>`;
+    renderIcons($('apiForm'));
+    if (state && state.provider) $('defProv').value = state.provider;
+    $('ptabs').querySelectorAll('.ptab').forEach(t => t.addEventListener('click', () => switchTab(t.dataset.p)));
+    $('apiForm').querySelectorAll('a[data-url]').forEach(a => a.addEventListener('click', e => { e.preventDefault(); openLink(a.dataset.url); }));
+    PROVIDERS.forEach(p => $('key-' + p.id).addEventListener('input', () => onKeyInput(p.id)));
+    document.querySelectorAll('#apiForm select').forEach(enhanceSelect);
+}
+
+function switchTab(id) {
+    activeTab = id;
+    document.querySelectorAll('[data-pane]').forEach(el => el.style.display = el.dataset.pane === id ? '' : 'none');
+    document.querySelectorAll('.ptab').forEach(t => t.classList.toggle('on', t.dataset.p === id));
+}
+
+let defTouched = false;
+function onKeyInput(id) {
+    const has = !!$('key-' + id).value.trim();
+    $('kd-' + id).style.display = has ? '' : 'none';
+    // The first key entered automatically becomes the default
+    if (has && !defTouched) {
+        const withKey = PROVIDERS.filter(p => $('key-' + p.id).value.trim());
+        if (withKey.length === 1) { $('defProv').value = id; syncSel($('defProv')); }
+    }
+}
+document.addEventListener('change', e => { if (e.target && e.target.id === 'defProv') defTouched = true; });
+
+// ── Custom dropdown ──────────────────────────────────────────────────────
+// Visually replaces <select>; the real <select> stays (hidden) and keeps the value.
+function enhanceSelect(sel) {
+    if (sel._vsel) return sel._vsel.sync();
+    const wrap = document.createElement('div');
+    wrap.className = 'vsel';
+    const btn = document.createElement('button');
+    btn.type = 'button'; btn.className = 'vsel-btn';
+    btn.setAttribute('aria-haspopup', 'listbox');
+    if (sel.id) { const lbl = document.querySelector(`label[for="${sel.id}"]`); if (lbl) { lbl.htmlFor = sel.id + '-btn'; btn.id = sel.id + '-btn'; } }
+    const list = document.createElement('div');
+    list.className = 'vsel-list'; list.setAttribute('role', 'listbox');
+    sel.style.display = 'none';
+    sel.parentNode.insertBefore(wrap, sel);
+    wrap.append(btn, list, sel);
+    let kb = -1;
+
+    const parts = o => { const m = o.text.match(/^(.*?)\s*\((.+)\)$/); return m ? [m[1], m[2]] : [o.text, '']; };
+    function render() {
+        const [main] = parts(sel.options[sel.selectedIndex] || { text: '' });
+        btn.innerHTML = `<span>${main}</span><svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>`;
+        list.innerHTML = '';
+        [...sel.options].forEach((o, i) => {
+            const [main, tag] = parts(o);
+            const b = document.createElement('button');
+            b.type = 'button'; b.setAttribute('role', 'option');
+            b.className = 'vsel-opt' + (i === sel.selectedIndex ? ' sel' : '') + (i === kb ? ' kb' : '');
+            b.setAttribute('aria-selected', i === sel.selectedIndex);
+            b.innerHTML = `<span class="tick">${i === sel.selectedIndex ? icon('check', 12) : ''}</span><span>${main}</span>${tag ? `<span class="tag">${tag}</span>` : ''}`;
+            b.addEventListener('click', () => { pick(i); close(); btn.focus(); });
+            list.appendChild(b);
+        });
+    }
+    function pick(i) {
+        if (sel.selectedIndex !== i) { sel.selectedIndex = i; sel.dispatchEvent(new Event('change', { bubbles: true })); }
+        render();
+    }
+    function open() {
+        document.querySelectorAll('.vsel.open').forEach(v => v !== wrap && v.classList.remove('open'));
+        const r = wrap.getBoundingClientRect();
+        const need = Math.min(200, sel.options.length * 34 + 10) + 64; // + footer
+        wrap.classList.toggle('up', window.innerHeight - r.bottom < need);
+        kb = sel.selectedIndex; render();
+        wrap.classList.add('open');
+    }
+    function close() { wrap.classList.remove('open'); kb = -1; }
+    btn.addEventListener('click', () => wrap.classList.contains('open') ? close() : open());
+    btn.addEventListener('keydown', e => {
+        const n = sel.options.length;
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (!wrap.classList.contains('open')) return open();
+            kb = (kb + (e.key === 'ArrowDown' ? 1 : -1) + n) % n; render();
+        } else if ((e.key === 'Enter' || e.key === ' ') && wrap.classList.contains('open') && kb >= 0) {
+            e.preventDefault(); pick(kb); close();
+        } else if (e.key === 'Escape' && wrap.classList.contains('open')) {
+            e.stopPropagation(); close();
+        }
+    });
+    document.addEventListener('click', e => { if (!wrap.contains(e.target)) close(); });
+    sel._vsel = { sync: render };
+    render();
+}
+function syncSel(sel) { if (sel && sel._vsel) sel._vsel.sync(); }
+
+// ── Folder ───────────────────────────────────────────────────────────────
+async function chooseDir() {
+    if (!hasApi) return;
+    const res = await window.veya.chooseDir(installDir);
+    if (!res) return;
+    installDir = res.dir;
+    $('installPath').value = installDir;
+    $('pathNote').className = 'note' + (res.writable ? '' : ' bad');
+    $('pathNote').textContent = res.writable ? 'VEYA gets its own "VEYA-AI" subfolder.' : 'This folder isn\'t writable without admin rights. Please pick another one.';
+    updateInstallBtn();
+}
+
+// ── Progress ──────────────────────────────────────────────────────────
+const STEPS = ['ps1', 'ps2', 'ps3', 'ps4', 'ps5', 'ps6', 'ps7'];
+function setStep(id, s) {
+    const el = $(id); if (!el) return;
+    el.className = 'ps ' + s;
+    el.querySelector('.ps-ic').innerHTML = icon({ done: 'done', run: 'spinner', err: 'error', wait: 'wait' }[s] || 'wait', 16);
+}
+let runningStep = null;
+if (hasApi) {
+    window.veya.onProgress(({ step, pct, msg }) => {
+        const idx = STEPS.indexOf(step);
+        STEPS.forEach((s, i) => { if (i < idx) setStep(s, 'done'); });
+        setStep(step, pct >= 100 ? 'done' : 'run');
+        runningStep = step;
+        $('pBar').style.width = pct + '%';
+        $('pLbl').textContent = msg;
+    });
+}
+
+function resetProgress(title) {
+    STEPS.forEach(s => setStep(s, 'wait'));
+    $('pTitle').textContent = title;
+    $('pBar').style.width = '3%';
+    $('pLbl').textContent = 'Starting…';
+    $('errBox').style.display = 'none';
+    $('errActions').style.display = 'none';
+    $('pNext').disabled = true;
+    $('pStatus').textContent = 'Please don\'t close…';
+    runningStep = null;
+}
+
+function finishProgress(res, doneTitle, doneSub) {
+    if (res.ok) {
+        STEPS.forEach(s => setStep(s, 'done'));
+        $('pBar').style.width = '100%';
+        $('pStatus').textContent = 'Completed successfully';
+        $('pNext').disabled = false;
+        $('doneTitle').textContent = doneTitle;
+        $('doneSub').textContent = doneSub;
+        setTimeout(() => go(5), 700);
+    } else {
+        if (runningStep) setStep(runningStep, 'err');
+        $('pLbl').textContent = 'Aborted';
+        $('pStatus').textContent = 'Error';
+        $('errBox').style.display = 'block';
+        $('errBox').textContent = res.error;
+        $('errActions').style.display = 'flex';
+        lastLog = res.log || null;
+        $('btnLog').style.display = lastLog ? '' : 'none';
+    }
+}
+
+async function startInstall() {
+    lastMode = 'install';
+    go(4);
+    resetProgress('Installing…');
+    const apiKeys = {}, models = {};
+    PROVIDERS.forEach(p => { apiKeys[p.id] = $('key-' + p.id).value.trim(); models[p.id] = $('model-' + p.id).value; });
+    const opts = {
+        installDir,
+        flavors: selectedFlavors(),
+        provider: $('defProv').value,
+        apiKeys, models,
+        options: {
+            desktop: $('opt-desktop').checked,
+            startmenu: $('opt-startmenu').checked,
+            autostart: $('opt-autostart').checked,
+            examples: $('opt-examples').checked,
+        },
+    };
+    if (!hasApi) return simulate();
+    const res = await window.veya.runInstall(opts);
+    // Clear the keys from the UI after handing them over
+    PROVIDERS.forEach(p => { $('key-' + p.id).value = ''; });
+    finishProgress(res, 'Done!', 'VEYA-AI is installed. The VEYA button is now next to the emoji icon in Discord. Right-click a message to see the VEYA actions.');
+}
+
+async function startRepair() {
+    lastMode = 'repair';
+    go(4);
+    document.body.classList.add('mode-manage');
+    resetProgress('Repairing…');
+    if (!hasApi) return simulate();
+    const res = await window.veya.runRepair();
+    finishProgress(res, 'Repaired!', 'VEYA is connected to Discord again.');
+}
+
+function retry() { lastMode === 'repair' ? startRepair() : startInstall(); }
+function openLog() { if (hasApi && lastLog) window.veya.openLog(lastLog); }
+
+async function launchDiscord() {
+    const ids = selectedFlavors().length ? selectedFlavors() : (state && state.flavors) || [];
+    if (hasApi) await window.veya.launchDiscord(ids);
+    $('btnDiscord').innerHTML = icon('launch', 15) + ' Starting Discord…';
+    $('btnDiscord').disabled = true;
+}
+
+// ── Uninstall ───────────────────────────────────────────────────────────
+function leaveUninstall() { if (state && state.installed) showManage(); else veyaClose(); }
+
+async function startUninstall() {
+    $('uGo').disabled = true; $('uCancel').disabled = true;
+    $('uBarWrap').style.display = 'block';
+    $('uErr').style.display = 'none';
+    if (!hasApi) { $('uBar').style.width = '100%'; return uninstallDone(); }
+    const off = window.veya.onUninstallProgress(({ pct, msg }) => { $('uBar').style.width = pct + '%'; $('uLbl').textContent = msg; });
+    const res = await window.veya.runUninstall({ removeData: $('uData').checked });
+    off();
+    if (res.ok) uninstallDone();
+    else {
+        $('uErr').style.display = 'block'; $('uErr').textContent = res.error;
+        $('uGo').disabled = false; $('uCancel').disabled = false;
+    }
+}
+
+function uninstallDone() {
+    $('uForm').style.display = 'none';
+    $('uDone').style.display = 'flex';
+    $('uBtns').innerHTML = `<button class="btn btn-primary" onclick="${hasApi ? 'window.veya.quit()' : ''}">Close</button>`;
+}
+
+// ── Simulation (browser preview) ────────────────────────────────────────
+function simulate() {
+    let i = 0;
+    const msgs = ['Discord found', 'Discord closed', 'Files copied', 'Connected to Discord', 'Settings saved', 'Shortcuts created', 'Done!'];
+    const tick = () => {
+        if (i >= STEPS.length) return finishProgress({ ok: true }, 'Done!', 'Preview mode – the real installer would install VEYA here.');
+        STEPS.forEach((s, j) => setStep(s, j < i ? 'done' : j === i ? 'run' : 'wait'));
+        runningStep = STEPS[i];
+        $('pBar').style.width = Math.round((i + 1) / STEPS.length * 100) + '%';
+        $('pLbl').textContent = msgs[i++];
+        setTimeout(tick, 650);
+    };
+    tick();
+}
+
+// ── Confetti ─────────────────────────────────────────────────────────────
+function spawnParticles() {
+    const c = $('particles'); c.innerHTML = '';
+    const colors = ['#ccff00', '#e6ff7a', '#7ddb00', '#f0ff8a', '#9dff3a'];
+    for (let i = 0; i < 22; i++) {
+        const p = document.createElement('div');
+        p.className = 'p';
+        const col = colors[i % colors.length], size = 3 + Math.random() * 5;
+        p.style.cssText = `left:${8 + Math.random() * 84}%;bottom:${Math.random() * 50}%;background:${col};--dur:${2 + Math.random() * 3}s;--del:${Math.random() * 2}s;width:${size}px;height:${size}px;box-shadow:0 0 6px ${col};`;
+        c.appendChild(p);
+    }
+}
+
+// ── Start ────────────────────────────────────────────────────────────────
+async function init() {
+    renderIcons();
+    state = hasApi ? await window.veya.getState() : {
+        installed: false, version: '1.0.0', installDir: '%LOCALAPPDATA%\\VEYA-AI', hasPayload: true, platformOk: true, flavors: null, provider: null,
+        discords: [{ id: 'stable', name: 'Discord', found: true, version: '1.0.9200', state: 'clean' }, { id: 'ptb', name: 'Discord PTB', found: false, state: 'missing' }, { id: 'canary', name: 'Discord Canary', found: false, state: 'missing' }],
+    };
+    $('sbVer').textContent = 'VERSION ' + state.version;
+    $('tbTitle').textContent = `VEYA-AI · v${state.version}`;
+    $('infoVer').textContent = `Version ${state.version} · unofficial Vencord build`;
+    $('doneSub').textContent = '';
+    installDir = state.installDir;
+    $('installPath').value = installDir;
+
+    if (state.options) {
+        $('opt-desktop').checked = !!state.options.desktop;
+        $('opt-startmenu').checked = !!state.options.startmenu;
+        $('opt-autostart').checked = !!state.options.autostart;
+        $('opt-examples').checked = !!state.options.examples;
+    }
+    renderApiForm();
+    renderDiscordList();
+
+    if (!state.platformOk) { $('wErr').style.display = 'block'; $('wErr').textContent = 'VEYA-AI only runs on Windows.'; $('wNext').disabled = true; }
+    else if (!state.hasPayload) { $('wErr').style.display = 'block'; $('wErr').textContent = 'This installer contains no VEYA build. Please build it with installer/build-installer.ps1.'; }
+
+    if (state.startPage === 'uninstall') { if (state.installed) renderManage(); showPage(6); }
+    else if (state.installed) showManage();
+    else go(1);
+}
+init();
+</script>
+
+</body>
+</html>

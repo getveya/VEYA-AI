@@ -1,0 +1,22 @@
+{
+  "type": "theme",
+  "version": "1",
+  "data": {
+    "id": "dark-neon-1234",
+    "name": "Dark Neon",
+    "description": "Dark theme with a purple/blue neon accent. Minimal and clean.",
+    "version": "1.0.0",
+    "author": "VEYA-AI",
+    "tags": [
+      "dark",
+      "neon",
+      "minimal",
+      "purple"
+    ],
+    "css": "/* VEYA-AI Theme: Dark Neon */\n\n:root {\n  /* Backgrounds */\n  --background-primary: #0d0d14;\n  --background-secondary: #111118;\n  --background-secondary-alt: #0a0a10;\n  --background-tertiary: #080810;\n  --background-accent: #5865f2;\n  --background-floating: #111118;\n  --background-nested-floating: #1a1a24;\n  \n  /* Modifiers */\n  --background-modifier-hover: rgba(88, 101, 242, 0.08);\n  --background-modifier-active: rgba(88, 101, 242, 0.16);\n  --background-modifier-selected: rgba(88, 101, 242, 0.24);\n  --background-modifier-accent: rgba(255, 255, 255, 0.06);\n  \n  /* Text */\n  --text-normal: #dcddde;\n  --text-muted: #72767d;\n  --text-link: #7289da;\n  --header-primary: #ffffff;\n  --header-secondary: #b9bbbe;\n  \n  /* Interaction */\n  --interactive-normal: #b9bbbe;\n  --interactive-hover: #dcddde;\n  --interactive-active: #ffffff;\n  --interactive-muted: #4f545c;\n  \n  /* Brand / accent */\n  --brand-500: #7c5cbf;\n  --brand-560: #6a4fad;\n  \n  /* Channels */\n  --channeltextarea-background: #1a1a24;\n}\n\n/* Scrollbar */\n::-webkit-scrollbar { width: 6px; }\n::-webkit-scrollbar-track { background: transparent; }\n::-webkit-scrollbar-thumb { background: #2a2a3a; border-radius: 3px; }\n::-webkit-scrollbar-thumb:hover { background: #7c5cbf; }\n\n/* Channel list – subtle glow on hover */\n[class*=\"channel-\"]:hover [class*=\"name-\"] {\n  color: #c0a8ff !important;\n}",
+    "createdAt": 1727978400000,
+    "updatedAt": 1727978400000
+  },
+  "exportedAt": 1727978400000,
+  "exportedBy": "VEYA-AI Team"
+}

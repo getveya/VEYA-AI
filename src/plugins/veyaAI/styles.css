@@ -1,0 +1,750 @@
+/* VEYA-AI – chat window & settings */
+
+.veya-chat {
+    --veya-accent: #ccff00;
+    --veya-on-accent: #050505;
+    --veya-soft: rgb(204 255 0 / 9%);
+    --veya-border: rgb(204 255 0 / 22%);
+    --veya-ease: cubic-bezier(0.2, 0.9, 0.25, 1.15);
+
+    position: fixed;
+    right: 20px;
+    bottom: 84px;
+    z-index: 1000;
+    width: 400px;
+    max-width: calc(100vw - 40px);
+    height: 580px;
+    max-height: calc(100vh - 120px);
+    display: flex;
+    flex-direction: column;
+    background: color-mix(in srgb, var(--background-primary, var(--background-base-low)) 92%, transparent);
+    backdrop-filter: blur(18px) saturate(1.3);
+    border: 1px solid var(--veya-border);
+    border-radius: 18px;
+    box-shadow: 0 24px 60px rgb(0 0 0 / 55%), 0 0 0 1px rgb(255 255 255 / 3%) inset, 0 0 40px rgb(204 255 0 / 6%);
+    overflow: hidden;
+    transform-origin: bottom right;
+    animation: veya-open 0.32s var(--veya-ease) both;
+    color: var(--text-normal, var(--text-default));
+}
+.veya-chat.closing { animation: veya-close 0.17s ease-in both; pointer-events: none; }
+
+@keyframes veya-open {
+    from { opacity: 0; transform: translateY(14px) scale(0.92); filter: blur(6px); }
+    to { opacity: 1; transform: none; filter: none; }
+}
+
+@keyframes veya-close {
+    to { opacity: 0; transform: translateY(10px) scale(0.95); filter: blur(4px); }
+}
+
+/* Header */
+.veya-chat-head {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 12px 12px 14px;
+}
+
+.veya-chat-head::after {
+    content: "";
+    position: absolute;
+    left: 14px;
+    right: 14px;
+    bottom: 0;
+    height: 1px;
+    background: var(--background-modifier-accent);
+}
+
+/* Progress shimmer while VEYA is answering */
+.veya-chat.busy .veya-chat-head::after {
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--veya-accent), transparent);
+    background-size: 40% 100%;
+    background-repeat: no-repeat;
+    animation: veya-scan 1.1s linear infinite;
+}
+
+@keyframes veya-scan {
+    from { background-position: -40% 0; }
+    to { background-position: 140% 0; }
+}
+
+.veya-chat-title { flex: 1; min-width: 0; line-height: 1.2; }
+.veya-chat-title > div { font-weight: 800; font-size: 14.5px; letter-spacing: 0.04em; color: var(--header-primary); }
+.veya-chat-title > div span { color: var(--veya-accent); }
+
+.veya-chat-title small {
+    display: block;
+    font-size: 11px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.veya-icon-btn {
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9px;
+    border: none;
+    background: none;
+    color: var(--interactive-normal);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, transform 0.15s var(--veya-ease);
+}
+.veya-icon-btn:hover:not(:disabled) { background: var(--background-modifier-hover); color: var(--interactive-hover); transform: translateY(-1px); }
+.veya-icon-btn:active:not(:disabled) { transform: scale(0.92); }
+.veya-icon-btn.danger:hover { color: #ff6b6b; background: rgb(255 77 77 / 12%); }
+.veya-icon-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.veya-icon-btn:focus-visible, .veya-send:focus-visible, .veya-chips button:focus-visible, .veya-msg-actions button:focus-visible { outline: 2px solid var(--veya-accent); outline-offset: 2px; }
+
+/* Messages */
+.veya-chat-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    scroll-behavior: smooth;
+    scrollbar-width: thin;
+}
+
+.veya-msg { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
+.veya-msg.user { align-items: flex-end; }
+.veya-msg.new { animation: veya-pop 0.36s var(--veya-ease) both; }
+.veya-msg.user.new { transform-origin: bottom right; }
+.veya-msg.assistant.new { transform-origin: bottom left; }
+
+@keyframes veya-pop {
+    from { opacity: 0; transform: translateY(10px) scale(0.94); }
+    to { opacity: 1; transform: none; }
+}
+
+.veya-bubble {
+    max-width: 86%;
+    padding: 9px 13px;
+    font-size: 13.5px;
+    line-height: 1.55;
+    word-break: break-word;
+    border-radius: 16px 16px 16px 5px;
+    background: var(--background-secondary, var(--background-base-lower));
+    transition: background 0.2s;
+}
+
+.veya-msg.user .veya-bubble {
+    border-radius: 16px 16px 5px;
+    background: linear-gradient(135deg, #e6ff5c 0%, #ccff00 55%, #8be000 100%);
+    color: var(--veya-on-accent);
+    font-weight: 500;
+    box-shadow: 0 4px 14px rgb(204 255 0 / 18%);
+}
+
+.veya-msg.error .veya-bubble { background: rgb(255 77 77 / 10%); color: #ff8a8a; border: 1px solid rgb(255 77 77 / 25%); }
+.veya-md { user-select: text; }
+.veya-md pre { max-width: 100%; overflow-x: auto; }
+
+/* Blinking cursor while streaming */
+.veya-caret {
+    display: inline-block;
+    width: 7px;
+    height: 1.05em;
+    margin-left: 2px;
+    vertical-align: text-bottom;
+    border-radius: 2px;
+    background: var(--veya-accent);
+    box-shadow: 0 0 8px var(--veya-accent);
+    animation: veya-blink 0.9s steps(2, start) infinite;
+}
+
+@keyframes veya-blink { to { visibility: hidden; } }
+
+/* Actions appear on hover */
+.veya-msg-actions {
+    display: flex;
+    gap: 2px;
+    padding-left: 4px;
+    opacity: 0;
+    transform: translateY(-3px);
+    transition: opacity 0.15s, transform 0.15s;
+}
+.veya-msg:hover .veya-msg-actions, .veya-msg:focus-within .veya-msg-actions, .veya-msg:last-child .veya-msg-actions { opacity: 1; transform: none; }
+
+.veya-msg-actions button {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 7px;
+    border: none;
+    background: none;
+    color: var(--text-muted);
+    font-size: 11px;
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s;
+}
+.veya-msg-actions button:hover { background: var(--background-modifier-hover); color: var(--header-primary); }
+
+/* Typing animation */
+.veya-typing { display: inline-flex; gap: 5px; padding: 5px 2px; }
+
+.veya-typing i {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--veya-accent);
+    box-shadow: 0 0 8px rgb(204 255 0 / 60%);
+    animation: veya-bounce 1.1s infinite var(--veya-ease);
+}
+.veya-typing i:nth-child(2) { animation-delay: 0.14s; }
+.veya-typing i:nth-child(3) { animation-delay: 0.28s; }
+
+@keyframes veya-bounce {
+    0%, 70%, 100% { opacity: 0.3; transform: translateY(0) scale(0.85); }
+    35% { opacity: 1; transform: translateY(-5px) scale(1); }
+}
+
+/* Empty state */
+.veya-chat-empty {
+    margin: auto 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 13px;
+    animation: veya-pop 0.45s var(--veya-ease) both;
+}
+.veya-chat-empty b { color: var(--header-primary); font-size: 16px; margin-top: 8px; }
+.veya-chat-empty small { margin-top: 12px; font-size: 11px; max-width: 280px; opacity: 0.8; }
+.veya-float { animation: veya-float 3.2s ease-in-out infinite; filter: drop-shadow(0 0 14px rgb(204 255 0 / 35%)); }
+
+@keyframes veya-float {
+    0%, 100% { transform: translateY(0) rotate(0); }
+    50% { transform: translateY(-6px) rotate(-3deg); }
+}
+
+.veya-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 14px; }
+
+.veya-chips button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--background-modifier-accent);
+    background: var(--background-secondary, var(--background-base-lower));
+    color: var(--text-normal, var(--text-default));
+    font-size: 12px;
+    cursor: pointer;
+    animation: veya-pop 0.4s var(--veya-ease) both;
+    transition: border-color 0.15s, color 0.15s, transform 0.15s var(--veya-ease), box-shadow 0.15s;
+}
+.veya-chips button:nth-child(2) { animation-delay: 0.06s; }
+.veya-chips button:nth-child(3) { animation-delay: 0.12s; }
+.veya-chips button:hover { border-color: var(--veya-border); color: var(--header-primary); transform: translateY(-2px); box-shadow: 0 6px 16px rgb(0 0 0 / 25%); }
+
+/* Input */
+.veya-chat-input {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    padding: 10px 12px 12px;
+}
+
+.veya-chat-input textarea {
+    flex: 1;
+    max-height: 120px;
+    resize: none;
+    padding: 10px 14px;
+    border-radius: 12px;
+    border: 1px solid var(--background-modifier-accent);
+    background: var(--background-secondary, var(--background-base-lower));
+    color: var(--text-normal, var(--text-default));
+    font: inherit;
+    font-size: 13.5px;
+    outline: none;
+    field-sizing: content;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+.veya-chat-input textarea:focus { border-color: var(--veya-border); box-shadow: 0 0 0 3px rgb(204 255 0 / 8%); }
+
+.veya-send {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #e6ff5c 0%, #ccff00 55%, #8be000 100%);
+    color: var(--veya-on-accent);
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgb(204 255 0 / 25%);
+    transition: transform 0.18s var(--veya-ease), box-shadow 0.18s, opacity 0.18s;
+}
+.veya-send:hover:not(:disabled) { transform: translateY(-2px) rotate(-4deg); box-shadow: 0 8px 20px rgb(204 255 0 / 35%); }
+.veya-send:active:not(:disabled) { transform: scale(0.9); }
+.veya-send:disabled { opacity: 0.3; cursor: not-allowed; box-shadow: none; }
+.veya-send.stop { background: var(--background-modifier-accent); color: var(--header-primary); box-shadow: none; animation: veya-pulse 1.4s ease-in-out infinite; }
+
+@keyframes veya-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgb(204 255 0 / 0%); }
+    50% { box-shadow: 0 0 0 4px rgb(204 255 0 / 18%); }
+}
+
+/* Less motion when the OS asks for it */
+@media (prefers-reduced-motion: reduce) {
+    .veya-chat, .veya-chat *, .veya-chat *::before, .veya-chat *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Settings */
+.veya-card-btn { transition: filter 0.15s, transform 0.15s; }
+.veya-card-btn:hover:not(:disabled) { filter: brightness(1.12); transform: translateY(-1px); }
+.veya-card-btn:active:not(:disabled) { transform: scale(0.97); }
+.veya-card-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.veya-code { white-space: pre; font-family: var(--font-code, monospace); font-size: 12px; line-height: 1.5; }
+.veya-code mark { background: rgb(255 77 77 / 22%); color: inherit; border-radius: 2px; }
+
+/* VEYA button in the chat bar */
+.veya-bar-logo { display: flex; transition: transform 0.25s cubic-bezier(0.2, 0.9, 0.25, 1.3), filter 0.25s; }
+button:hover > .veya-bar-logo, [role="button"]:hover .veya-bar-logo { transform: rotate(-10deg) scale(1.12); }
+.veya-bar-logo.on { filter: drop-shadow(0 0 6px rgb(204 255 0 / 65%)); }
+
+
+/* Move & resize */
+.veya-chat-head { cursor: grab; user-select: none; touch-action: none; }
+.veya-chat.dragging, .veya-chat.dragging * { cursor: grabbing !important; user-select: none; }
+.veya-chat.dragging { transition: none; box-shadow: 0 30px 80px rgb(0 0 0 / 60%), 0 0 0 1px var(--veya-border); }
+
+.veya-resize {
+    position: absolute;
+    right: 3px;
+    bottom: 3px;
+    width: 16px;
+    height: 16px;
+    cursor: nwse-resize;
+    touch-action: none;
+    opacity: 0.45;
+    background:
+        linear-gradient(135deg, transparent 55%, var(--veya-accent) 55% 62%, transparent 62% 72%, var(--veya-accent) 72% 79%, transparent 79%);
+    transition: opacity 0.15s;
+}
+.veya-resize:hover { opacity: 1; }
+
+.veya-thumb { display: block; max-width: 100%; max-height: 180px; border-radius: 10px; margin-bottom: 6px; object-fit: cover; }
+
+/* Render summaries & lists cleanly */
+.veya-md { display: block; }
+.veya-md ul, .veya-md ol { margin: 4px 0 4px 18px; padding: 0; }
+.veya-md li { margin: 2px 0; }
+.veya-md h1, .veya-md h2, .veya-md h3 { font-size: 14px; margin: 8px 0 4px; color: var(--header-primary); }
+.veya-md p { margin: 0 0 6px; }
+.veya-md > :last-child { margin-bottom: 0; }
+
+/* ═══ Shared colours for everything outside the chat window ═══ */
+.veya-topbar, .veya-badge-wrap, .veya-dialog-back, .veya-pop, .veya-tr, .veya-writer-pop {
+    --veya-accent: #ccff00;
+    --veya-on-accent: #050505;
+    --veya-soft: rgb(204 255 0 / 9%);
+    --veya-border: rgb(204 255 0 / 22%);
+    --veya-ease: cubic-bezier(0.2, 0.9, 0.25, 1.15);
+}
+
+/* ═══ Progress bar at the very top ═══ */
+.veya-topbar {
+    position: fixed;
+    inset: 0 0 auto;
+    height: 3px;
+    z-index: 10002;
+    pointer-events: none;
+    background: rgb(204 255 0 / 8%);
+    animation: veya-fade-in 0.2s ease both;
+}
+.veya-topbar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #7ddb00, #ccff00, #f0ff8a);
+    box-shadow: 0 0 10px rgb(204 255 0 / 70%), 0 0 2px #ccff00;
+    border-radius: 0 3px 3px 0;
+    transition: width 0.35s var(--veya-ease);
+}
+.veya-topbar-fill.indeterminate { width: 35%; animation: veya-indet 1.2s ease-in-out infinite; }
+.veya-topbar.done { animation: veya-fade-out 0.6s 1.6s ease forwards; }
+.veya-topbar.failed .veya-topbar-fill { background: #ff4d4d; box-shadow: 0 0 10px rgb(255 77 77 / 60%); }
+
+@keyframes veya-indet { 0% { transform: translateX(-110%); } 100% { transform: translateX(310%); } }
+@keyframes veya-fade-in { from { opacity: 0; } }
+@keyframes veya-fade-out { to { opacity: 0; } }
+
+/* ═══ Small VEYA logo top right ═══ */
+.veya-badge-wrap { position: fixed; top: 6px; right: 10px; z-index: 10001; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+.veya-badge {
+    width: 28px;
+    height: 28px;
+    display: grid;
+    place-items: center;
+    border-radius: 9px;
+    border: 1px solid rgb(204 255 0 / 18%);
+    background: rgb(10 12 8 / 72%);
+    backdrop-filter: blur(10px);
+    cursor: pointer;
+    opacity: 0.75;
+    transition: opacity 0.2s, transform 0.25s var(--veya-ease), box-shadow 0.2s, border-color 0.2s;
+}
+.veya-badge:hover { opacity: 1; transform: scale(1.08) rotate(-6deg); border-color: var(--veya-border); box-shadow: 0 0 14px rgb(204 255 0 / 25%); }
+.veya-badge.open { opacity: 1; box-shadow: 0 0 12px rgb(204 255 0 / 35%); }
+.veya-badge.busy { opacity: 1; animation: veya-badge-pulse 1.6s ease-in-out infinite; }
+@keyframes veya-badge-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgb(204 255 0 / 0%); }
+    50% { box-shadow: 0 0 0 5px rgb(204 255 0 / 16%), 0 0 16px rgb(204 255 0 / 30%); }
+}
+
+.veya-tasks {
+    width: 270px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px;
+    border-radius: 14px;
+    border: 1px solid var(--veya-border);
+    background: color-mix(in srgb, var(--background-floating, #111214) 94%, transparent);
+    backdrop-filter: blur(14px);
+    box-shadow: 0 16px 40px rgb(0 0 0 / 50%);
+    animation: veya-pop-in 0.22s var(--veya-ease) both;
+    color: var(--text-normal, var(--text-default));
+    font-size: 13px;
+}
+.veya-task { padding: 6px 8px; border-radius: 10px; background: var(--background-modifier-hover); }
+.veya-task-row { display: flex; align-items: center; gap: 8px; }
+.veya-task-row b { flex: 1; min-width: 0; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--header-primary); }
+.veya-task.done .veya-task-row svg { color: var(--veya-accent); }
+.veya-task.failed .veya-task-row svg, .veya-task.failed .veya-task-detail { color: #ff8a8a; }
+.veya-task-detail { margin: 3px 0 0 22px; font-size: 12px; color: var(--text-muted); line-height: 1.35; }
+.veya-task-bar { margin: 6px 0 2px 22px; height: 3px; border-radius: 3px; background: rgb(204 255 0 / 10%); overflow: hidden; }
+.veya-task-bar i { display: block; height: 100%; background: var(--veya-accent); border-radius: 3px; transition: width 0.3s; }
+.veya-task-bar i.indeterminate { width: 40%; animation: veya-indet 1.2s ease-in-out infinite; }
+.veya-task-x { margin-left: auto; display: grid; place-items: center; width: 20px; height: 20px; border: none; border-radius: 6px; background: transparent; color: var(--interactive-normal); cursor: pointer; }
+.veya-task-x:hover { background: rgb(255 77 77 / 14%); color: #ff6b6b; }
+
+.veya-spin { animation: veya-rotate 0.9s linear infinite; }
+@keyframes veya-rotate { to { transform: rotate(360deg); } }
+@keyframes veya-pop-in { from { opacity: 0; transform: translateY(-6px) scale(0.96); } }
+
+/* ═══ VEYA windows (dialogs) ═══ */
+.veya-dialog-back {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background: rgb(0 0 0 / 55%);
+    backdrop-filter: blur(4px);
+    animation: veya-fade-in 0.18s ease both;
+}
+.veya-dialog-back.closing { animation: veya-fade-out 0.16s ease forwards; }
+.veya-dialog {
+    max-width: 100%;
+    max-height: calc(100vh - 48px);
+    display: flex;
+    flex-direction: column;
+    border-radius: 18px;
+    border: 1px solid var(--veya-border);
+    background: var(--background-primary, var(--background-base-low));
+    box-shadow: 0 30px 80px rgb(0 0 0 / 60%), 0 0 50px rgb(204 255 0 / 6%);
+    color: var(--text-normal, var(--text-default));
+    overflow: hidden;
+    animation: veya-open 0.3s var(--veya-ease) both;
+}
+.veya-dialog-back.closing .veya-dialog { animation: veya-close 0.16s ease-in both; }
+.veya-dialog-head { display: flex; align-items: center; gap: 12px; padding: 16px 16px 12px 18px; border-bottom: 1px solid var(--background-modifier-accent); }
+.veya-dialog-title { font-size: 18px; font-weight: 700; color: var(--header-primary); }
+.veya-dialog-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.veya-dialog-body { padding: 18px 20px 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; font-size: 15px; line-height: 1.45; }
+.veya-dialog .veya-icon-btn { width: 30px; height: 30px; border: none; border-radius: 8px; background: transparent; color: var(--interactive-normal); display: grid; place-items: center; cursor: pointer; }
+.veya-dialog .veya-icon-btn:hover { background: var(--background-modifier-hover); }
+
+.veya-field { display: flex; flex-direction: column; gap: 6px; }
+.veya-field > span { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--header-secondary, var(--text-muted)); }
+.veya-input, .veya-textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--background-modifier-accent);
+    background: var(--input-background, var(--background-secondary));
+    color: var(--text-normal, var(--text-default));
+    font: inherit;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+.veya-textarea { resize: vertical; min-height: 90px; }
+.veya-input:focus, .veya-textarea:focus { border-color: var(--veya-border); box-shadow: 0 0 0 3px rgb(204 255 0 / 8%); }
+
+.veya-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.veya-row.end { justify-content: flex-end; }
+.veya-check { display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; user-select: none; }
+.veya-check input { accent-color: #ccff00; width: 16px; height: 16px; }
+
+.veya-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--background-modifier-accent);
+    background: var(--background-modifier-hover);
+    color: var(--header-primary);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.15s, filter 0.15s, background 0.15s;
+}
+.veya-btn:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.15); }
+.veya-btn:active:not(:disabled) { transform: scale(0.97); }
+.veya-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.veya-btn.primary { border: none; background: linear-gradient(135deg, #e6ff5c 0%, #ccff00 55%, #8be000 100%); color: #050505; box-shadow: 0 4px 14px rgb(204 255 0 / 22%); }
+.veya-btn.danger { color: #ff8a8a; border-color: rgb(255 77 77 / 30%); background: rgb(255 77 77 / 8%); }
+
+.veya-note { padding: 10px 12px; border-radius: 10px; font-size: 13px; background: var(--veya-soft); border: 1px solid var(--veya-border); display: flex; gap: 10px; align-items: flex-start; }
+.veya-note.warn { background: rgb(255 184 0 / 8%); border-color: rgb(255 184 0 / 28%); }
+.veya-note.err { background: rgb(255 77 77 / 8%); border-color: rgb(255 77 77 / 28%); color: #ff9a9a; }
+.veya-note svg { flex-shrink: 0; margin-top: 1px; }
+
+.veya-plan { display: flex; flex-direction: column; gap: 10px; }
+.veya-plan-group { border: 1px solid var(--background-modifier-accent); border-radius: 12px; padding: 10px 12px; }
+.veya-plan-group h4 { margin: 0 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); }
+.veya-plan-item { display: flex; align-items: center; gap: 8px; padding: 3px 0; font-size: 13px; }
+.veya-plan-item .hash { color: var(--text-muted); width: 14px; text-align: center; }
+.veya-plan-item .sub { color: var(--text-muted); font-size: 12px; margin-left: auto; }
+.veya-role-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 0 2px rgb(0 0 0 / 25%); }
+.veya-logo-prev { width: 96px; height: 96px; border-radius: 24px; border: 1px solid var(--background-modifier-accent); overflow: hidden; background: #111; }
+.veya-logo-prev img, .veya-logo-prev svg { width: 100%; height: 100%; display: block; }
+
+.veya-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; }
+.veya-stat { padding: 10px 12px; border-radius: 12px; background: var(--background-modifier-hover); }
+.veya-stat b { display: block; font-size: 20px; color: var(--header-primary); font-variant-numeric: tabular-nums; }
+.veya-stat span { font-size: 12px; color: var(--text-muted); }
+.veya-bars { display: flex; flex-direction: column; gap: 5px; }
+.veya-bars div { display: grid; grid-template-columns: 130px 1fr 44px; gap: 8px; align-items: center; font-size: 12px; }
+.veya-bars span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.veya-bars i { display: block; height: 7px; border-radius: 4px; background: linear-gradient(90deg, #7ddb00, #ccff00); }
+.veya-bars span:last-child { text-align: right; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.veya-report { padding: 12px 14px; border-radius: 12px; background: var(--background-secondary); user-select: text; }
+.veya-report .veya-md { font-size: 14px; }
+.veya-media-prev { max-width: 100%; max-height: 260px; border-radius: 12px; object-fit: contain; align-self: center; background: #000; }
+
+.veya-list { display: flex; flex-direction: column; gap: 6px; }
+.veya-list-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px; background: var(--background-modifier-hover); font-size: 13px; }
+.veya-list-item > div { flex: 1; min-width: 0; }
+.veya-list-item small { display: block; color: var(--text-muted); font-size: 12px; }
+
+/* ═══ Live translation below messages ═══ */
+.veya-tr {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    margin-top: 4px;
+    padding: 6px 10px;
+    max-width: 680px;
+    border-left: 2px solid var(--veya-accent);
+    border-radius: 0 8px 8px 0;
+    background: var(--veya-soft);
+    font-size: 14px;
+    line-height: 1.4;
+    color: var(--text-normal, var(--text-default));
+    animation: veya-pop-in 0.25s var(--veya-ease) both;
+}
+.veya-tr svg { flex-shrink: 0; margin-top: 2px; color: var(--veya-accent); }
+.veya-tr small { color: var(--text-muted); font-size: 11px; margin-left: 6px; }
+.veya-tr button { margin-left: auto; border: none; background: none; color: var(--text-muted); cursor: pointer; padding: 0 2px; }
+.veya-tr button:hover { color: var(--header-primary); }
+
+/* ═══ Writing assistant ═══ */
+.veya-writer-pop {
+    position: fixed;
+    z-index: 10001;
+    width: 380px;
+    max-width: calc(100vw - 24px);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px;
+    border-radius: 14px;
+    border: 1px solid var(--veya-border);
+    background: color-mix(in srgb, var(--background-floating, #111214) 96%, transparent);
+    backdrop-filter: blur(14px);
+    box-shadow: 0 20px 50px rgb(0 0 0 / 55%);
+    animation: veya-pop-in 0.22s var(--veya-ease) both;
+    color: var(--text-normal, var(--text-default));
+    font-size: 13px;
+}
+.veya-writer-modes { display: flex; flex-wrap: wrap; gap: 6px; }
+.veya-writer-modes button {
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--background-modifier-accent);
+    background: var(--background-modifier-hover);
+    color: var(--header-primary);
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+    transition: border-color 0.15s, transform 0.15s;
+}
+.veya-writer-modes button:hover { border-color: var(--veya-border); transform: translateY(-1px); }
+.veya-writer-modes button.on { background: var(--veya-accent); color: #050505; border-color: transparent; }
+.veya-writer-out { max-height: 220px; overflow-y: auto; white-space: pre-wrap; padding: 8px 10px; border-radius: 10px; background: var(--background-secondary); user-select: text; }
+
+/* ═══ VEYA Motion – smooth animations across Discord (optional) ═══ */
+body.veya-motion [class*="messageListItem_"] { animation: veya-msg-in 0.28s cubic-bezier(0.2, 0.9, 0.25, 1.1) both; }
+body.veya-motion [class*="containerDefault_"], body.veya-motion [class*="listItem_"] { transition: transform 0.18s ease; }
+body.veya-motion [class*="containerDefault_"]:hover { transform: translateX(3px); }
+body.veya-motion [class*="listItem_"]:hover { transform: scale(1.04); }
+body.veya-motion [class*="layerContainer_"] [role="menu"] { animation: veya-pop-in 0.16s ease both; }
+body.veya-motion [class*="focusLock_"] [role="dialog"] { animation: veya-open 0.26s cubic-bezier(0.2, 0.9, 0.25, 1.15) both; }
+@keyframes veya-msg-in { from { opacity: 0; transform: translateY(8px); } }
+
+@media (prefers-reduced-motion: reduce) {
+    .veya-topbar *, .veya-badge, .veya-tasks *, .veya-dialog-back, .veya-dialog, .veya-tr, .veya-writer-pop, body.veya-motion * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* ═══ Switches & checkboxes (settings + dialogs) ═══ */
+.veya-switch {
+    position: relative;
+    flex-shrink: 0;
+    width: 44px;
+    height: 26px;
+    border: none;
+    border-radius: 999px;
+    background: #4e5058;
+    cursor: pointer;
+    transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+.veya-switch span {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 2px 4px rgb(0 0 0 / 30%);
+    transition: transform 0.22s cubic-bezier(0.3, 1.3, 0.5, 1);
+}
+.veya-switch.on { background: linear-gradient(135deg, #e6ff5c, #ccff00 60%, #8be000); box-shadow: 0 0 12px rgb(204 255 0 / 30%); }
+.veya-switch.on span { transform: translateX(18px); background: #050505; }
+.veya-switch:focus-visible { outline: 2px solid #ccff00; outline-offset: 2px; }
+.veya-toggle-row { display: flex; align-items: center; gap: 16px; padding: 12px 0; cursor: pointer; border-bottom: 1px solid var(--background-modifier-accent); }
+.veya-toggle-row:last-child { border-bottom: none; }
+
+.veya-check { display: inline-flex; align-items: center; gap: 10px; font-size: 15px; cursor: pointer; user-select: none; color: var(--text-normal, var(--text-default)); }
+.veya-check input {
+    appearance: none;
+    -webkit-appearance: none;
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    margin: 0;
+    border-radius: 6px;
+    border: 2px solid #6d6f78;
+    background: transparent;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+.veya-check input::after {
+    content: "";
+    width: 10px;
+    height: 6px;
+    border-left: 2.5px solid #050505;
+    border-bottom: 2.5px solid #050505;
+    transform: translateY(-1px) rotate(-45deg) scale(0);
+    transition: transform 0.18s cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+.veya-check input:checked { background: #ccff00; border-color: #ccff00; box-shadow: 0 0 10px rgb(204 255 0 / 35%); }
+.veya-check input:checked::after { transform: translateY(-1px) rotate(-45deg) scale(1); }
+.veya-check input:disabled { opacity: 0.4; cursor: not-allowed; }
+.veya-check input:focus-visible { outline: 2px solid #ccff00; outline-offset: 2px; }
+
+/* ═══ Searchable dropdown ═══ */
+.veya-picker { position: relative; }
+.veya-picker-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--background-modifier-accent);
+    background: var(--background-tertiary, var(--background-base-lowest));
+    color: var(--text-normal, var(--text-default));
+    font: inherit;
+    font-size: 15px;
+    cursor: pointer;
+    text-align: left;
+}
+.veya-picker-btn:hover { border-color: rgb(204 255 0 / 35%); }
+.veya-picker-pop {
+    position: absolute;
+    z-index: 50;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    max-height: 340px;
+    display: flex;
+    flex-direction: column;
+    border-radius: 12px;
+    border: 1px solid rgb(204 255 0 / 25%);
+    background: var(--background-floating, #111214);
+    box-shadow: 0 16px 40px rgb(0 0 0 / 50%);
+    overflow: hidden;
+    animation: veya-pop-in 0.16s ease both;
+}
+.veya-picker-pop input { margin: 8px; width: calc(100% - 16px); box-sizing: border-box; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--background-modifier-accent); background: var(--background-tertiary, var(--background-base-lowest)); color: var(--text-normal, var(--text-default)); font: inherit; font-size: 15px; outline: none; }
+.veya-picker-pop input:focus { border-color: rgb(204 255 0 / 45%); }
+.veya-picker-list { overflow-y: auto; padding: 0 6px 6px; }
+.veya-picker-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 10px; border-radius: 8px; font-size: 15px; color: var(--text-normal, var(--text-default)); cursor: pointer; }
+.veya-picker-item small { color: var(--text-muted); font-size: 13px; }
+.veya-picker-item:hover, .veya-picker-item.hl { background: var(--background-modifier-hover); }
+.veya-picker-item.sel { color: #ccff00; font-weight: 700; }
+
+/* Colour pickers for the theme editor */
+.veya-swatch { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--background-modifier-accent); background: var(--background-tertiary, var(--background-base-lowest)); }
+.veya-swatch input[type="color"] { width: 34px; height: 34px; padding: 0; border: none; border-radius: 8px; background: none; cursor: pointer; }
+.veya-swatch input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+.veya-swatch input[type="color"]::-webkit-color-swatch { border: 2px solid rgb(255 255 255 / 15%); border-radius: 8px; }
+.veya-swatch b { display: block; font-size: 14px; color: var(--header-primary); }
+.veya-swatch small { font-size: 12.5px; color: var(--text-muted); font-family: var(--font-code, monospace); }
+
+/* Running tasks: small card at the top centre (no longer in the corner next to the window buttons) */
+.veya-taskpill { position: fixed; top: 40px; left: 50%; transform: translateX(-50%); z-index: 10001; --veya-accent: #ccff00; --veya-border: rgb(204 255 0 / 22%); }
+.veya-taskpill .veya-tasks { width: 320px; }
+
+/* update dialog */
+.veya-update-notes { display: flex; flex-direction: column; gap: 6px; max-height: 220px; overflow-y: auto; padding: 12px 14px; border-radius: 10px; background: var(--background-secondary); font-size: 14px; color: var(--text-normal); }
+.veya-update-notes b { color: var(--header-primary); margin-top: 4px; }
+.veya-update-item { display: flex; gap: 8px; align-items: flex-start; }
+.veya-update-item svg { color: #ccff00; margin-top: 3px; flex: none; }
+.veya-update-status { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--text-muted); }
+.veya-update-status.ok { color: #ccff00; }
+.veya-update-status.err { color: #ff6b6b; }
+.veya-update-status a { color: #ccff00; }

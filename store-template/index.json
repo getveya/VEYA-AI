@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "name": "VEYA Community Store",
+  "items": [
+    {
+      "type": "plugin",
+      "id": "ai-status-1234",
+      "name": "Quote of the Day",
+      "description": "Asks the AI for a motivational quote once a day.",
+      "author": "VEYA-AI",
+      "version": "1.0.0",
+      "tags": [
+        "fun",
+        "ai"
+      ],
+      "url": "plugins/quote-of-the-day.veya.json"
+    },
+    {
+      "type": "theme",
+      "id": "dark-neon-1234",
+      "name": "Dark Neon",
+      "description": "Dark theme with a neon accent.",
+      "author": "VEYA-AI",
+      "version": "1.0.0",
+      "tags": [
+        "dark",
+        "neon"
+      ],
+      "url": "themes/dark-neon.veya.json"
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "type": "plugin",
+  "version": "1",
+  "data": {
+    "id": "ai-status-1234",
+    "name": "Quote of the Day",
+    "description": "Asks the AI for a motivational quote once a day and prints it to the console.",
+    "version": "1.0.0",
+    "author": "VEYA-AI",
+    "tags": [
+      "fun",
+      "ai",
+      "motivation"
+    ],
+    "code": "// VEYA-AI plugin: Quote of the Day\n// Shows an AI-generated motivational quote once per day\n\nmodule.exports = {\n  onLoad: async () => {\n    // Already shown today?\n    const today = new Date().toDateString();\n    if (VEYA.storage.get('lastQuoteDate') === today) {\n      const saved = VEYA.storage.get('todayQuote');\n      if (saved) {\n        console.log('[Quote of the Day]', saved);\n        return;\n      }\n    }\n\n    // Ask the AI for a new quote\n    const quote = await VEYA.ai.ask(\n      'Give me a short motivational quote for today. Two sentences max.',\n      'You are a motivating coach.'\n    );\n\n    VEYA.storage.set('todayQuote', quote);\n    VEYA.storage.set('lastQuoteDate', today);\n    console.log('[Quote of the Day]', quote);\n  },\n\n  onUnload: () => {\n    console.log('[Quote of the Day] Disabled.');\n  }\n};",
+    "createdAt": 1727978400000,
+    "updatedAt": 1727978400000
+  },
+  "exportedAt": 1727978400000,
+  "exportedBy": "VEYA-AI Team"
+}

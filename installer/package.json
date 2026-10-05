@@ -1,0 +1,50 @@
+{
+  "name": "veya-ai-installer",
+  "version": "1.0.0",
+  "description": "VEYA-AI Installer & Manager",
+  "author": "VEYA-AI",
+  "license": "GPL-3.0-or-later",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win portable --x64",
+    "build:dir": "electron-builder --win dir --x64"
+  },
+  "build": {
+    "appId": "dev.veya-ai.manager",
+    "productName": "VEYA-AI",
+    "copyright": "VEYA-AI · GPL-3.0 · based on Vencord",
+    "artifactName": "VEYA-AI-Setup-${version}.${ext}",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build-resources"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "installer.html",
+      "lib/**",
+      "assets/**"
+    ],
+    "extraResources": [
+      { "from": "payload", "to": "payload", "filter": ["**/*"] }
+    ],
+    "win": {
+      "target": [{ "target": "portable", "arch": ["x64"] }],
+      "icon": "assets/veya-logo.ico",
+      "requestedExecutionLevel": "asInvoker",
+      "publisherName": "VEYA-AI",
+      "signingHashAlgorithms": ["sha256"],
+      "rfc3161TimeStampServer": "http://timestamp.digicert.com"
+    },
+    "portable": {
+      "artifactName": "VEYA-AI-Setup-${version}.exe",
+      "requestExecutionLevel": "user",
+      "unpackDirName": "VEYA-AI-Setup"
+    }
+  },
+  "devDependencies": {
+    "electron": "^28.3.3",
+    "electron-builder": "^24.13.3"
+  }
+}

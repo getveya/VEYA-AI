@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 100 100">
+  <!-- VEYA-AI · App-Icon (Lime-Kachel, schwarzes Goo-V) -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#E2FF5C"/>
+      <stop offset="1" stop-color="#B8F000"/>
+    </linearGradient>
+    <filter id="goo" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3.5"/>
+      <feColorMatrix values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7"/>
+    </filter>
+  </defs>
+  <rect x="2" y="2" width="96" height="96" rx="24" fill="url(#bg)"/>
+  <g transform="translate(14 14) scale(0.72)">
+    <g filter="url(#goo)" fill="#050505">
+      <path d="M26 28 L50 72 L74 28" fill="none" stroke="#050505" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="26" cy="28" r="11"/>
+      <circle cx="74" cy="28" r="11"/>
+      <circle cx="50" cy="73" r="9"/>
+      <circle cx="85" cy="15" r="5.5"/>
+    </g>
+  </g>
+</svg>
