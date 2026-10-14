@@ -5,6 +5,7 @@
  * --uninstall:           Window opens straight on "Uninstall" (from Windows → Apps)
  * --repair-silent:       No window. On Windows startup, checks whether Discord is still
  *                        patched after an update, and repairs it if needed.
+ * --local-ai:            Window opens straight on "Local AI" (from VEYA → Settings → Local AI)
  * --update:              Started by VEYA inside Discord when a new version is out. Small progress
  *                        window: closes Discord, installs this version with the saved settings,
  *                        starts Discord again.
@@ -14,12 +15,14 @@ const { app, BrowserWindow, dialog, ipcMain, shell } = require("electron");
 const path = require("path");
 const discord = require("./lib/discord");
 const sys = require("./lib/system");
+const ollama = require("./lib/ollama");
 const { fs } = discord;
 
 const ARGS = process.argv.slice(1);
 const SILENT_REPAIR = ARGS.includes("--repair-silent");
 const START_UNINSTALL = ARGS.includes("--uninstall");
 const AUTO_UPDATE = ARGS.includes("--update");
+const START_LOCAL = ARGS.includes("--local-ai");
 
 // ─── Paths & version ─────────────────────────────────────────────────────────
 
@@ -91,7 +94,7 @@ function getState() {
         version: payloadVersion(),
         hasPayload: fs.existsSync(path.join(payloadDir(), "dist", "patcher.js")),
         discords: discord.detect().map(({ id, name, found, version, state }) => ({ id, name, found, version, state })),
-        startPage: START_UNINSTALL ? "uninstall" : null,
+        startPage: START_UNINSTALL ? "uninstall" : START_LOCAL ? "local" : null,
         platformOk: process.platform === "win32",
     };
 }
@@ -99,7 +102,10 @@ function getState() {
 // ─── Install / repair ───────────────────────────────────────────────
 
 async function install(event, opts) {
-    const send = (step, pct, msg) => event.sender.send("install-progress", { step, pct, msg });
+    // With local AI the download is by far the longest part → the normal steps use 0–30 %, local AI 30–99 %
+    const scale = opts.localAI ? 0.3 : 1;
+    const send = (step, pct, msg) => event.sender.send("install-progress", { step, pct: step === "ps7" ? pct : Math.round(pct * scale), msg });
+    let local = null;
     const installDir = path.resolve(opts.installDir || sys.DEFAULT_INSTALL_DIR);
     const repair = !!opts.repair;
     const record = sys.readRecord() || {};
@@ -156,6 +162,7 @@ async function install(event, opts) {
         send("ps5", 70, "Saving settings…");
         if (!repair) {
             sys.writeVencordSettings({ provider: opts.provider, models: opts.models });
+            if (opts.localAI) log("Local AI selected:", opts.localAI.model);
             if (await sys.writePendingKeys(installDir, opts.apiKeys)) log("API keys handed over encrypted");
         }
         await sys.removeLegacyRegistry();
@@ -175,9 +182,25 @@ async function install(event, opts) {
         });
         send("ps6", 94, managerExe ? "Shortcuts created" : "Developer mode – no shortcuts");
 
+        // 7. Local AI (optional, never fails the whole installation)
+        if (opts.localAI && !repair) {
+            const raw = (step, pct, msg) => event.sender.send("install-progress", { step, pct, msg });
+            // the download can take a while → give the user Discord back right away
+            for (const t of targets.filter(t => launched.includes(t.id))) { try { discord.launch(t); log(`${t.name} started again`); } catch { } }
+            raw("ps8", 30, launched.length ? "Discord is back – setting up local AI in the background…" : "Setting up local AI…");
+            try {
+                const r = await ollama.setup(opts.localAI.model, (p, msg) => raw("ps8", p == null ? null : 30 + Math.round(p * 0.69), msg), log);
+                local = { ok: true, model: r.model };
+                log("Local AI ready:", r.model);
+            } catch (e) {
+                local = { ok: false, error: String(e?.message || e) };
+                log("Local AI failed:", e?.stack || e);
+            }
+        }
+
         send("ps7", 100, "Done!");
         log("Completed successfully");
-        return { ok: true, wasRunning: launched };
+        return { ok: true, wasRunning: launched, local };
     } catch (err) {
         log("ERROR:", err?.stack || err);
         return { ok: false, error: String(err?.message || err), log: logFile, wasRunning: launched };
@@ -293,8 +316,8 @@ let win = null;
 
 function createWindow() {
     win = new BrowserWindow({
-        width: 700,
-        height: 520,
+        width: 900,
+        height: 660,
         resizable: false,
         maximizable: false,
         frame: false,
@@ -343,6 +366,16 @@ ipcMain.handle("get-state", () => getState());
 ipcMain.handle("run-install", (e, opts) => install(e, opts || {}));
 ipcMain.handle("run-repair", e => install(e, { repair: true, installDir: sys.readRecord()?.installDir }));
 ipcMain.handle("run-uninstall", (e, opts) => uninstall(e, opts || {}));
+ipcMain.handle("local-status", () => ollama.status());
+ipcMain.handle("run-local", async (e, opts) => {
+    try {
+        const r = await ollama.setup(opts?.model, (pct, msg) => e.sender.send("local-progress", { pct, msg }), log);
+        return { ok: true, model: r.model };
+    } catch (err) {
+        log("Local AI failed:", err?.stack || err);
+        return { ok: false, error: String(err?.message || err) };
+    }
+});
 
 ipcMain.handle("choose-dir", async (_e, current) => {
     const res = await dialog.showOpenDialog(win, {

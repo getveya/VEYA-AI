@@ -25,6 +25,9 @@ contextBridge.exposeInMainWorld("veya", {
     openLog: file => ipcRenderer.invoke("open-log", file),
     quit: () => ipcRenderer.invoke("quit-after-uninstall"),
 
+    localStatus: () => ipcRenderer.invoke("local-status"),
+    runLocal: opts => ipcRenderer.invoke("run-local", opts),
+    onLocalProgress: listen("local-progress"),
     onProgress: listen("install-progress"),
     onUninstallProgress: listen("uninstall-progress"),
 });

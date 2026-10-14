@@ -46,7 +46,7 @@ body::before{
 }
 
 .window{
-  width:680px;height:490px;
+  width:calc(100vw - 20px);height:calc(100vh - 30px);
   background:rgba(10,11,8,0.97);
   border:1px solid rgba(204,255,0,0.25);
   border-radius:16px;
@@ -56,42 +56,40 @@ body::before{
   position:relative;z-index:1;
 }
 
+/* Scrollbars */
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(204,255,0,0.14);border-radius:99px;border:3px solid transparent;background-clip:padding-box}
+::-webkit-scrollbar-thumb:hover{background:rgba(204,255,0,0.3);background-clip:padding-box}
+::-webkit-scrollbar-button{display:none;height:0}
+
 /* Titlebar */
 .titlebar{
   display:flex;align-items:center;gap:10px;
-  padding:11px 16px;
+  padding:6px 8px 6px 16px;
   background:rgba(0,0,0,0.4);
   border-bottom:1px solid var(--border);
   backdrop-filter:blur(20px);
   -webkit-app-region:drag;
   flex-shrink:0;
 }
-.dots{display:flex;gap:7px;-webkit-app-region:no-drag}
-.dot{
-  width:13px;height:13px;border-radius:50%;cursor:pointer;
-  position:relative;transition:filter 0.15s;
-}
-.dot:hover{filter:brightness(1.2)}
-.dot::after{
-  content:'';position:absolute;inset:3px;border-radius:50%;
-  background:rgba(0,0,0,0.3);opacity:0;transition:opacity 0.15s;
-}
-.dot:hover::after{opacity:1}
-.dot-r{background:#ff5f57;box-shadow:0 0 6px #ff5f5788}
-.dot-y{background:#febc2e;box-shadow:0 0 6px #febc2e88}
-.dot-g{background:#28c840;box-shadow:0 0 6px #28c84088}
+.tb-left{width:84px}
+.wbtns{display:flex;gap:4px;width:84px;justify-content:flex-end;-webkit-app-region:no-drag}
+.wbtn{width:34px;height:28px;display:grid;place-items:center;border:none;background:none;border-radius:7px;color:var(--text2);cursor:pointer;transition:background .15s,color .15s}
+.wbtn:hover{background:rgba(255,255,255,0.07);color:var(--text)}
+.wbtn.x:hover{background:rgba(255,77,77,0.85);color:#fff}
+.wbtn svg{width:14px;height:14px}
 .tb-title{
   flex:1;text-align:center;
   font-size:12px;color:var(--text3);letter-spacing:0.05em;font-weight:500;
 }
-.tb-right{width:46px}
 
 /* Body */
 .body{display:flex;flex:1;min-height:0;overflow:hidden}
 
 /* Sidebar */
 .sidebar{
-  width:196px;
+  width:220px;
   background:rgba(0,0,0,0.3);
   border-right:1px solid var(--border);
   display:flex;flex-direction:column;flex-shrink:0;
@@ -190,6 +188,7 @@ body::before{
   background:var(--card);border:1px solid var(--border);color:var(--text2);cursor:pointer;
   transition:all 0.15s;
 }
+.beta{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:5px;background:rgba(204,255,0,0.14);border:1px solid rgba(204,255,0,0.35);color:var(--accent);font-size:9.5px;font-weight:800;letter-spacing:.08em;vertical-align:2px}
 .ptab:hover{border-color:rgba(204,255,0,0.3);color:var(--text)}
 .ptab.on{background:rgba(204,255,0,0.15);border-color:rgba(204,255,0,0.4);color:#e6ff7a;font-weight:600}
 .api-form{padding:12px 24px;flex:1;overflow-y:auto}
@@ -408,10 +407,11 @@ body.mode-manage .step-manage{display:flex}
 .vsel-btn{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left;cursor:pointer;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font:500 12px var(--font);transition:border .15s,box-shadow .15s}
 .vsel-btn:hover{border-color:rgba(204,255,0,0.3)}
 .vsel.open .vsel-btn,.vsel-btn:focus-visible{outline:none;border-color:rgba(204,255,0,0.5);box-shadow:0 0 0 3px rgba(204,255,0,0.1)}
+.vsel-btn>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .vsel-btn .chev{transition:transform .15s;color:var(--text2);flex-shrink:0}
-.vsel.open .vsel-btn .chev{transform:rotate(180deg)}
-.vsel-list{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:40;display:none;flex-direction:column;gap:2px;padding:4px;background:#0f110b;border:1px solid rgba(204,255,0,0.22);border-radius:9px;box-shadow:0 14px 40px rgba(0,0,0,.6);max-height:200px;overflow-y:auto}
-.vsel.up .vsel-list{top:auto;bottom:calc(100% + 4px)}
+.vsel.open .vsel-btn>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vsel-btn .chev{transform:rotate(180deg)}
+.vsel-list{position:fixed;z-index:1000;display:none;flex-direction:column;gap:2px;padding:4px;background:#0f110b;border:1px solid rgba(204,255,0,0.22);border-radius:9px;box-shadow:0 14px 40px rgba(0,0,0,.6);max-height:200px;overflow-y:auto}
 .vsel.open .vsel-list{display:flex}
 .vsel-opt{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;cursor:pointer;font-size:12px;color:var(--text2);border:none;background:none;text-align:left;font-family:var(--font);width:100%}
 .vsel-opt:hover,.vsel-opt.kb{background:rgba(204,255,0,0.07);color:var(--text)}
@@ -427,13 +427,12 @@ body.mode-manage .step-manage{display:flex}
 <div class="window">
 
   <div class="titlebar">
-    <div class="dots">
-      <button class="dot dot-r" id="btnClose" title="Close" aria-label="Close"></button>
-      <button class="dot dot-y" id="btnMin" title="Minimize" aria-label="Minimize"></button>
-      <div class="dot dot-g"></div>
-    </div>
+    <div class="tb-left"></div>
     <div class="tb-title" id="tbTitle">VEYA-AI Setup</div>
-    <div class="tb-right"></div>
+    <div class="wbtns">
+      <button class="wbtn" id="btnMin" title="Minimize" aria-label="Minimize"><svg viewBox="0 0 14 14"><path d="M2.5 7h9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+      <button class="wbtn x" id="btnClose" title="Close" aria-label="Close"><svg viewBox="0 0 14 14"><path d="M3 3l8 8M11 3l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+    </div>
   </div>
 
   <div class="body">
@@ -488,6 +487,10 @@ body.mode-manage .step-manage{display:flex}
             <button class="action" type="button" onclick="startWizard()">
               <div class="a-ic"><i data-ic="import" data-size="17"></i></div>
               <div><b id="mReinstallTitle">Reinstall</b><span>Change options, API keys or folder.</span></div>
+            </button>
+            <button class="action" type="button" onclick="openLocal()">
+              <div class="a-ic"><i data-ic="spark" data-size="17"></i></div>
+              <div><b>Local AI <span class="beta">BETA</span></b><span>Free AI on your PC with Ollama – no API key needed.</span></div>
             </button>
             <button class="action danger" type="button" onclick="showPage(6)">
               <div class="a-ic"><i data-ic="uninstall" data-size="17"></i></div>
@@ -593,6 +596,7 @@ body.mode-manage .step-manage{display:flex}
             <div class="ps wait" id="ps4"><div class="ps-ic"><i data-ic="wait"></i></div><span>Connect to Discord</span></div>
             <div class="ps wait" id="ps5"><div class="ps-ic"><i data-ic="wait"></i></div><span>Settings &amp; keys (encrypted)</span></div>
             <div class="ps wait" id="ps6"><div class="ps-ic"><i data-ic="wait"></i></div><span>Shortcuts &amp; auto-repair</span></div>
+            <div class="ps wait" id="ps8" style="display:none"><div class="ps-ic"><i data-ic="wait"></i></div><span>Local AI (Ollama + model) · beta</span></div>
             <div class="ps wait" id="ps7"><div class="ps-ic"><i data-ic="wait"></i></div><span>Finish</span></div>
           </div>
           <div class="prog-bar-wrap"><div class="prog-bar-fill" id="pBar" style="width:3%"></div></div>
@@ -626,6 +630,30 @@ body.mode-manage .step-manage{display:flex}
             <button type="button" class="chip" onclick="openLink(LINKS.discord)"><i data-ic="chat" data-size="12"></i> Join the support Discord</button>
             <button type="button" class="chip" onclick="openLink(LINKS.instagram)"><i data-ic="link" data-size="12"></i> Instagram</button>
             <button type="button" class="chip" onclick="openLink(LINKS.tiktok)"><i data-ic="link" data-size="12"></i> TikTok</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- P7: LOCAL AI -->
+      <div class="page" id="p7">
+        <div class="ph">
+          <div class="ph-title">Local AI <span class="beta">BETA</span></div>
+          <div class="ph-sub">Free AI that runs on your PC with Ollama – no API key, nothing leaves your computer. This feature is new – please report problems in our Discord.</div>
+          <div class="ph-div"></div>
+        </div>
+        <div class="scroll" style="padding-top:0">
+          <div class="note" id="lStatus" style="margin-bottom:12px">Checking…</div>
+          <label class="form-lbl" for="lModel">Model</label>
+          <select class="form-inp" id="lModel" style="cursor:pointer"></select>
+          <div class="note" id="lNote" style="margin-top:10px"></div>
+          <div class="prog-bar-wrap" id="lBarWrap" style="display:none;margin-top:14px"><div class="prog-bar-fill" id="lBar" style="width:0%"></div></div>
+          <div class="prog-lbl" id="lLbl"></div>
+        </div>
+        <div class="footer">
+          <div class="footer-info" id="lInfo">Discord can stay open</div>
+          <div class="footer-btns">
+            <button class="btn btn-ghost" id="lBack" onclick="leaveLocal()"><i data-ic="back"></i> Back</button>
+            <button class="btn btn-primary" id="lGo" onclick="startLocal()">Install <i data-ic="import"></i></button>
           </div>
         </div>
       </div>
@@ -743,7 +771,13 @@ const LINKS = {
     tiktok: "https://www.tiktok.com/@veya_ai_",
 };
 
+const LOCAL_MODELS = [
+    ["gemma3:4b", "Gemma 3 4B – recommended, also sees images (3.3 GB)", 3.3, 8],
+    ["llama3.2:3b", "Llama 3.2 3B – light, for older PCs (2.0 GB)", 2.0, 8],
+    ["qwen2.5:7b", "Qwen 2.5 7B – strongest, needs 16 GB RAM (4.7 GB)", 4.7, 16],
+];
 const PROVIDERS = [
+    { id: "local", label: "Local AI · Beta", local: true, name: "Local AI (Ollama) – Beta" },
     { id: "claude",     label: "Claude",     name: "Claude API key (Anthropic)", hint: "sk-ant-…", url: "https://console.anthropic.com/settings/keys", urlText: "console.anthropic.com/settings/keys",
       models: [["auto", "Auto – best available (recommended)"], ["claude-sonnet-4-5", "claude-sonnet-4-5"], ["claude-opus-4-1", "claude-opus-4-1 (most capable, pricier)"], ["claude-haiku-4-5", "claude-haiku-4-5 (fast & cheap)"]] },
     { id: "openai",     label: "ChatGPT",    name: "OpenAI API key", hint: "sk-…", url: "https://platform.openai.com/api-keys", urlText: "platform.openai.com/api-keys",
@@ -769,7 +803,7 @@ let cur = 1;
 let installDir = "";
 let lastLog = null;
 let lastMode = "install";
-let activeTab = "claude";
+let activeTab = "local";
 
 // ── Window ──────────────────────────────────────────────────────────────
 function veyaClose() { if (hasApi) window.veya.close(); }
@@ -787,7 +821,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('infoMo
 function showPage(n) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     $('p' + n).classList.add('active');
-    document.body.classList.toggle('mode-manage', n === 0 || n === 6);
+    document.body.classList.toggle('mode-manage', n === 0 || n === 6 || n === 7);
     cur = n;
 }
 
@@ -800,6 +834,37 @@ function go(n) {
         else { if (i === n) step.classList.add('active'); num.textContent = i; }
     }
     if (n === 5) spawnParticles();
+}
+
+// ── Local AI page ──────────────────────────────────────────────────────────
+let localBusy = false;
+async function openLocal() {
+    showPage(7);
+    $('lModel').innerHTML = LOCAL_MODELS.map(([v, t]) => `<option value="${v}">${t}</option>`).join('');
+    syncSel($('lModel'));
+    const upd = () => {
+        const m = LOCAL_MODELS.find(x => x[0] === $('lModel').value) || LOCAL_MODELS[0];
+        $('lNote').innerHTML = `<b>Download: ~${(1 + m[2]).toFixed(1)} GB</b> (Ollama ~1 GB, skipped if already installed + model ${m[2]} GB) · needs ${m[3]} GB RAM.<br>Takes about <b>5–20 minutes</b> depending on your internet. Local answers are slower than cloud AIs.`;
+    };
+    if (!$('lModel')._vsel) enhanceSelect($('lModel')); else syncSel($('lModel'));
+    $('lModel').onchange = upd; upd();
+    $('lStatus').textContent = 'Checking…';
+    const st = hasApi ? await window.veya.localStatus() : { running: false, installed: false, models: [] };
+    $('lStatus').className = 'note' + (st.running && st.models.length ? '' : ' warn');
+    $('lStatus').innerHTML = st.running
+        ? `Ollama is running${st.version ? ` (v${st.version})` : ''}. Installed models: <b>${st.models.join(', ') || 'none yet'}</b>`
+        : st.installed ? 'Ollama is installed but not running – it will be started.' : 'Ollama is not installed yet – it will be installed for your Windows user (no admin needed).';
+}
+function leaveLocal() { if (localBusy) return; if (state && state.installed) showManage(); else go(2); }
+async function startLocal() {
+    if (!hasApi || localBusy) return;
+    localBusy = true; $('lGo').disabled = true; $('lBack').disabled = true;
+    $('lBarWrap').style.display = ''; $('lLbl').textContent = 'Starting…';
+    const off = window.veya.onLocalProgress(({ pct, msg }) => { if (pct != null) $('lBar').style.width = pct + '%'; $('lLbl').textContent = msg; });
+    const res = await window.veya.runLocal({ model: $('lModel').value });
+    off(); localBusy = false; $('lBack').disabled = false;
+    if (res.ok) { $('lBar').style.width = '100%'; $('lLbl').textContent = `Done – ${res.model} is ready. In Discord: Settings → VEYA → AI & Settings → Local AI → Use.`; $('lGo').textContent = 'Done'; }
+    else { $('lLbl').textContent = 'Error: ' + res.error; $('lGo').disabled = false; }
 }
 
 function startWizard() { $('wBack').style.display = state && state.installed ? '' : 'none'; go(1); }
@@ -856,7 +921,7 @@ function renderManage() {
 // ── API keys ────────────────────────────────────────────────────────────────
 function renderApiForm() {
     $('ptabs').innerHTML = PROVIDERS.map(p => `<button type="button" role="tab" class="ptab${p.id === activeTab ? ' on' : ''}" data-p="${p.id}">${p.label}<span class="kdot" id="kd-${p.id}" style="display:none"></span></button>`).join('');
-    $('apiForm').innerHTML = PROVIDERS.map(p => `
+    $('apiForm').innerHTML = PROVIDERS.map(p => p.local ? localPane(p) : `
         <div data-pane="${p.id}" style="${p.id === activeTab ? '' : 'display:none'}">
           <div style="margin-bottom:12px">
             <label class="form-lbl" for="key-${p.id}">${p.name}</label>
@@ -876,8 +941,27 @@ function renderApiForm() {
     if (state && state.provider) $('defProv').value = state.provider;
     $('ptabs').querySelectorAll('.ptab').forEach(t => t.addEventListener('click', () => switchTab(t.dataset.p)));
     $('apiForm').querySelectorAll('a[data-url]').forEach(a => a.addEventListener('click', e => { e.preventDefault(); openLink(a.dataset.url); }));
-    PROVIDERS.forEach(p => $('key-' + p.id).addEventListener('input', () => onKeyInput(p.id)));
+    PROVIDERS.filter(p => !p.local).forEach(p => $('key-' + p.id).addEventListener('input', () => onKeyInput(p.id)));
+    $('localOn').addEventListener('change', () => onKeyInput('local'));
+    $('localModel').addEventListener('change', localInfo);
+    localInfo();
     document.querySelectorAll('#apiForm select').forEach(enhanceSelect);
+}
+
+function localPane(p) {
+    return `
+        <div data-pane="local" style="${activeTab === 'local' ? '' : 'display:none'}">
+          <label class="opt" style="margin-bottom:10px"><input type="checkbox" id="localOn"><div class="opt-t"><b>Install local AI – free, no API key <span class="beta">BETA</span></b><span>Runs completely on your PC with Ollama. Nothing you ask leaves your computer. Still in beta – answers can be slower or less accurate, and it may not work on every PC.</span></div></label>
+          <label class="form-lbl" for="localModel">Model</label>
+          <select class="form-inp" id="localModel" style="cursor:pointer">${LOCAL_MODELS.map(([v, t]) => `<option value="${v}">${t}</option>`).join('')}</select>
+          <div class="note" id="localNote" style="margin-top:10px"></div>
+        </div>`;
+}
+function localInfo() {
+    const m = LOCAL_MODELS.find(x => x[0] === $('localModel').value) || LOCAL_MODELS[0];
+    const total = (1 + m[2]).toFixed(1);
+    $('localNote').innerHTML = `<b>Download: ~${total} GB</b> (Ollama ~1 GB + model ${m[2]} GB) · needs ${m[3]} GB RAM and ~${(m[2] + 2).toFixed(0)} GB free disk space.<br>`
+        + `The installation takes longer – about <b>5–20 minutes</b> depending on your internet. Local answers are slower than cloud AIs, especially on PCs without a graphics card. Voice messages still need a Gemini or Groq key.`;
 }
 
 function switchTab(id) {
@@ -888,11 +972,11 @@ function switchTab(id) {
 
 let defTouched = false;
 function onKeyInput(id) {
-    const has = !!$('key-' + id).value.trim();
+    const has = id === 'local' ? $('localOn').checked : !!$('key-' + id).value.trim();
     $('kd-' + id).style.display = has ? '' : 'none';
     // The first key entered automatically becomes the default
     if (has && !defTouched) {
-        const withKey = PROVIDERS.filter(p => $('key-' + p.id).value.trim());
+        const withKey = PROVIDERS.filter(p => p.local ? $('localOn').checked : $('key-' + p.id).value.trim());
         if (withKey.length === 1) { $('defProv').value = id; syncSel($('defProv')); }
     }
 }
@@ -935,13 +1019,23 @@ function enhanceSelect(sel) {
         if (sel.selectedIndex !== i) { sel.selectedIndex = i; sel.dispatchEvent(new Event('change', { bubbles: true })); }
         render();
     }
+    function place() {
+        const r = btn.getBoundingClientRect();
+        const below = window.innerHeight - r.bottom - 10, above = r.top - 10;
+        const want = Math.min(240, sel.options.length * 34 + 10);
+        const up = below < want && above > below;
+        list.style.left = r.left + 'px';
+        list.style.width = r.width + 'px';
+        list.style.top = up ? 'auto' : (r.bottom + 4) + 'px';
+        list.style.bottom = up ? (window.innerHeight - r.top + 4) + 'px' : 'auto';
+        list.style.maxHeight = Math.max(110, Math.min(240, up ? above : below)) + 'px';
+    }
     function open() {
         document.querySelectorAll('.vsel.open').forEach(v => v !== wrap && v.classList.remove('open'));
-        const r = wrap.getBoundingClientRect();
-        const need = Math.min(200, sel.options.length * 34 + 10) + 64; // + footer
-        wrap.classList.toggle('up', window.innerHeight - r.bottom < need);
         kb = sel.selectedIndex; render();
+        place();
         wrap.classList.add('open');
+        const cur = list.children[sel.selectedIndex]; if (cur) cur.scrollIntoView({ block: 'nearest' });
     }
     function close() { wrap.classList.remove('open'); kb = -1; }
     btn.addEventListener('click', () => wrap.classList.contains('open') ? close() : open());
@@ -957,7 +1051,9 @@ function enhanceSelect(sel) {
             e.stopPropagation(); close();
         }
     });
-    document.addEventListener('click', e => { if (!wrap.contains(e.target)) close(); });
+    document.addEventListener('click', e => { if (!e.composedPath().includes(wrap)) close(); });
+    document.addEventListener('scroll', e => { if (wrap.classList.contains('open') && !list.contains(e.target)) place(); }, true);
+    window.addEventListener('resize', () => { if (wrap.classList.contains('open')) place(); });
     sel._vsel = { sync: render };
     render();
 }
@@ -976,7 +1072,11 @@ async function chooseDir() {
 }
 
 // ── Progress ──────────────────────────────────────────────────────────
-const STEPS = ['ps1', 'ps2', 'ps3', 'ps4', 'ps5', 'ps6', 'ps7'];
+let STEPS = ['ps1', 'ps2', 'ps3', 'ps4', 'ps5', 'ps6', 'ps7'];
+function setLocalStep(on) {
+    STEPS = on ? ['ps1', 'ps2', 'ps3', 'ps4', 'ps5', 'ps6', 'ps8', 'ps7'] : ['ps1', 'ps2', 'ps3', 'ps4', 'ps5', 'ps6', 'ps7'];
+    $('ps8').style.display = on ? '' : 'none';
+}
 function setStep(id, s) {
     const el = $(id); if (!el) return;
     el.className = 'ps ' + s;
@@ -989,7 +1089,7 @@ if (hasApi) {
         STEPS.forEach((s, i) => { if (i < idx) setStep(s, 'done'); });
         setStep(step, pct >= 100 ? 'done' : 'run');
         runningStep = step;
-        $('pBar').style.width = pct + '%';
+        if (pct != null) $('pBar').style.width = pct + '%';
         $('pLbl').textContent = msg;
     });
 }
@@ -1032,12 +1132,15 @@ async function startInstall() {
     go(4);
     resetProgress('Installing…');
     const apiKeys = {}, models = {};
-    PROVIDERS.forEach(p => { apiKeys[p.id] = $('key-' + p.id).value.trim(); models[p.id] = $('model-' + p.id).value; });
+    PROVIDERS.filter(p => !p.local).forEach(p => { apiKeys[p.id] = $('key-' + p.id).value.trim(); models[p.id] = $('model-' + p.id).value; });
+    const localAI = $('localOn').checked ? { model: $('localModel').value } : null;
+    if (localAI) models.local = localAI.model;
+    setLocalStep(!!localAI);
     const opts = {
         installDir,
         flavors: selectedFlavors(),
         provider: $('defProv').value,
-        apiKeys, models,
+        apiKeys, models, localAI,
         options: {
             desktop: $('opt-desktop').checked,
             startmenu: $('opt-startmenu').checked,
@@ -1048,12 +1151,14 @@ async function startInstall() {
     if (!hasApi) return simulate();
     const res = await window.veya.runInstall(opts);
     // Clear the keys from the UI after handing them over
-    PROVIDERS.forEach(p => { $('key-' + p.id).value = ''; });
-    finishProgress(res, 'Done!', 'VEYA-AI is installed. The VEYA button is now next to the emoji icon in Discord. Right-click a message to see the VEYA actions.');
+    PROVIDERS.filter(p => !p.local).forEach(p => { $('key-' + p.id).value = ''; });
+    const localMsg = res.local ? (res.local.ok ? ` Local AI is ready (${res.local.model}).` : ` Local AI couldn't be installed (${res.local.error}) – try again later under VEYA-AI → Local AI.`) : '';
+    finishProgress(res, 'Done!', 'VEYA-AI is installed. The VEYA button is now next to the emoji icon in Discord. Right-click a message to see the VEYA actions.' + localMsg);
 }
 
 async function startRepair() {
     lastMode = 'repair';
+    setLocalStep(false);
     go(4);
     document.body.classList.add('mode-manage');
     resetProgress('Repairing…');
@@ -1128,7 +1233,7 @@ function spawnParticles() {
 async function init() {
     renderIcons();
     state = hasApi ? await window.veya.getState() : {
-        installed: false, version: '1.0.0', installDir: '%LOCALAPPDATA%\\VEYA-AI', hasPayload: true, platformOk: true, flavors: null, provider: null,
+        installed: false, version: '1.1.0', installDir: '%LOCALAPPDATA%\\VEYA-AI', hasPayload: true, platformOk: true, flavors: null, provider: null,
         discords: [{ id: 'stable', name: 'Discord', found: true, version: '1.0.9200', state: 'clean' }, { id: 'ptb', name: 'Discord PTB', found: false, state: 'missing' }, { id: 'canary', name: 'Discord Canary', found: false, state: 'missing' }],
     };
     $('sbVer').textContent = 'VERSION ' + state.version;
@@ -1151,6 +1256,7 @@ async function init() {
     else if (!state.hasPayload) { $('wErr').style.display = 'block'; $('wErr').textContent = 'This installer contains no VEYA build. Please build it with installer/build-installer.ps1.'; }
 
     if (state.startPage === 'uninstall') { if (state.installed) renderManage(); showPage(6); }
+    else if (state.startPage === 'local') { if (state.installed) renderManage(); openLocal(); }
     else if (state.installed) showManage();
     else go(1);
 }

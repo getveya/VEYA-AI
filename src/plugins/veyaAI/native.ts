@@ -3,7 +3,7 @@
  * Runs in the Discord main process (not in the browser part):
  *  - Store API keys encrypted (OS encryption via Electron safeStorage)
  *  - Read the keys handed over by the installer (DPAPI-protected)
- *  - AI requests to Claude, OpenAI, Gemini, DeepSeek, Grok, Mistral, Groq & OpenRouter – streaming + automatic model fallback
+ *  - AI requests to Claude, OpenAI, Gemini, DeepSeek, Grok, Mistral, Groq, OpenRouter & local AI (Ollama) – streaming + automatic model fallback
  *  - Load the online Store & example plugins
  *  - Check GitHub for a new VEYA release and run its installer in update mode
  *
@@ -11,12 +11,14 @@
  */
 
 import { execFile, spawn } from "child_process";
-import { app, IpcMainInvokeEvent, safeStorage } from "electron";
+import { app, clipboard, IpcMainInvokeEvent, nativeImage, safeStorage } from "electron";
 import { existsSync, mkdirSync, readdirSync, readFileSync, unlinkSync, writeFileSync } from "fs";
 import { join } from "path";
 
-export type Provider = "claude" | "openai" | "gemini" | "deepseek" | "xai" | "mistral" | "groq" | "openrouter";
-const PROVIDERS: Provider[] = ["claude", "openai", "gemini", "deepseek", "xai", "mistral", "groq", "openrouter"];
+export type Provider = "claude" | "openai" | "gemini" | "deepseek" | "xai" | "mistral" | "groq" | "openrouter" | "local";
+const PROVIDERS: Provider[] = ["claude", "openai", "gemini", "deepseek", "xai", "mistral", "groq", "openrouter", "local"];
+/** Providers that need an API key (local = Ollama on this PC, no key) */
+const KEYED: Provider[] = PROVIDERS.filter(p => p !== "local");
 
 /** OpenAI-compatible APIs */
 const COMPAT_BASE: Partial<Record<Provider, string>> = {
@@ -26,7 +28,67 @@ const COMPAT_BASE: Partial<Record<Provider, string>> = {
     mistral: "https://api.mistral.ai/v1",
     groq: "https://api.groq.com/openai/v1",
     openrouter: "https://openrouter.ai/api/v1",
+    local: "http://127.0.0.1:11434/v1",
 };
+
+// ─── Local AI (Ollama, runs on this PC) ─────────────────────────────────────
+
+const OLLAMA = "http://127.0.0.1:11434";
+let ollamaSeen = { at: 0, ok: false };
+
+/** Is Ollama running here with at least one model? (cached for 20 s) */
+async function ollamaReady(force = false): Promise<boolean> {
+    if (!force && Date.now() - ollamaSeen.at < 20_000) return ollamaSeen.ok;
+    let ok = false;
+    try {
+        const res = await fetch(`${OLLAMA}/api/tags`, { signal: AbortSignal.timeout(1500) });
+        const body = await res.json();
+        ok = res.ok && (body?.models ?? []).length > 0;
+    } catch { ok = false; }
+    ollamaSeen = { at: Date.now(), ok };
+    return ok;
+}
+
+/** Ollama is installed for this user but not running → start its tray app (no window) and wait */
+let lastStart = 0;
+async function startOllama(): Promise<boolean> {
+    const dir = join(process.env.LOCALAPPDATA ?? "", "Programs", "Ollama");
+    const tray = join(dir, "ollama app.exe");
+    if (!existsSync(tray) || Date.now() - lastStart < 120_000) return false;
+    lastStart = Date.now();
+    try { spawn(tray, [], { detached: true, stdio: "ignore" }).unref(); } catch { return false; }
+    for (let i = 0; i < 20; i++) {
+        await new Promise(r => setTimeout(r, 1000));
+        if (await ollamaReady(true)) return true;
+    }
+    return false;
+}
+
+/** Small local models only see a few thousand tokens – keep the start (instructions) and the end (newest messages) */
+const LOCAL_BUDGET = 9000;
+function clipMiddle(text: string, max: number) {
+    if (text.length <= max) return text;
+    const head = Math.floor(max * 0.35);
+    return text.slice(0, head) + "\n…\n" + text.slice(text.length - (max - head));
+}
+
+/** Local models that also understand images */
+const LOCAL_VISION = /(gemma3|llava|vision|vl\b|minicpm-v|moondream|llama4|mistral-small3)/i;
+
+export async function localStatus(_: IpcMainInvokeEvent) {
+    try {
+        const [tags, ver] = await Promise.all([
+            fetch(`${OLLAMA}/api/tags`, { signal: AbortSignal.timeout(2000) }).then(r => r.json()),
+            fetch(`${OLLAMA}/api/version`, { signal: AbortSignal.timeout(2000) }).then(r => r.json()).catch(() => ({})),
+        ]);
+        const models = (tags?.models ?? []).map((m: any) => ({ name: String(m.name), size: Number(m.size) || 0 }));
+        ollamaSeen = { at: Date.now(), ok: models.length > 0 };
+        return { running: true, version: String(ver?.version ?? ""), models };
+    } catch {
+        ollamaSeen = { at: Date.now(), ok: false };
+        return { running: false, version: "", models: [] as { name: string; size: number; }[] };
+    }
+}
 
 export type Part =
     | { type: "text"; text: string; }
@@ -53,7 +115,9 @@ const CAPS: Record<Provider, Array<"image" | "audio">> = {
     mistral: ["image"],
     groq: [],
     openrouter: ["image"],
+    local: [],
 };
+
 
 // patcher.js lives in <install folder>/dist → one level up is the install folder
 const INSTALL_DIR = join(__dirname, "..");
@@ -76,7 +140,7 @@ function readKeys(): Partial<Record<Provider, string>> {
     cache = {};
     try {
         const file: KeyFile = JSON.parse(readFileSync(KEYS_FILE, "utf8"));
-        for (const p of PROVIDERS) {
+        for (const p of KEYED) {
             const v = file.keys?.[p];
             if (!v) continue;
             cache[p] = file.encrypted
@@ -90,7 +154,7 @@ function readKeys(): Partial<Record<Provider, string>> {
 function writeKeys(keys: Partial<Record<Provider, string>>) {
     const encrypted = canEncrypt();
     const out: KeyFile = { version: 1, encrypted, keys: {} };
-    for (const p of PROVIDERS) {
+    for (const p of KEYED) {
         const v = keys[p];
         if (!v) continue;
         out.keys[p] = encrypted
@@ -103,7 +167,7 @@ function writeKeys(keys: Partial<Record<Provider, string>>) {
 }
 
 function storeKey(provider: Provider, key: string) {
-    if (!PROVIDERS.includes(provider)) throw new Error("Unknown provider");
+    if (!KEYED.includes(provider)) throw new Error("Unknown provider");
     const keys = { ...readKeys() };
     const clean = (key ?? "").trim();
     if (clean) keys[provider] = clean; else delete keys[provider];
@@ -144,7 +208,7 @@ const pendingImport: Promise<void> = (async () => {
     try {
         const plain = await dpapiUnprotect(readFileSync(PENDING_FILE, "utf8"));
         const keys = { ...readKeys() };
-        for (const p of PROVIDERS) if (plain[p]?.trim()) keys[p] = plain[p].trim();
+        for (const p of KEYED) if (plain[p]?.trim()) keys[p] = plain[p].trim();
         writeKeys(keys);
         console.log("[VEYA-AI] Imported API keys from the installer.");
     } catch (e) {
@@ -161,7 +225,7 @@ export async function getKeyStatus(_: IpcMainInvokeEvent) {
     const keys = readKeys();
     return {
         encrypted: canEncrypt(),
-        keys: Object.fromEntries(PROVIDERS.map(p => [p, !!keys[p]])) as Record<Provider, boolean>,
+        keys: { ...Object.fromEntries(KEYED.map(p => [p, !!keys[p]])), local: await ollamaReady(true) } as Record<Provider, boolean>,
     };
 }
 
@@ -176,7 +240,7 @@ export async function migrateKeys(_: IpcMainInvokeEvent, keys: Partial<Record<Pr
     await pendingImport;
     const current = { ...readKeys() };
     let changed = false;
-    for (const p of PROVIDERS) {
+    for (const p of KEYED) {
         const v = keys?.[p]?.trim();
         if (v && !current[p]) { current[p] = v; changed = true; }
     }
@@ -190,11 +254,12 @@ const MODEL_RE = /^[\w.:\-/]{1,80}$/;
 /** Only used if the provider's model list can't be loaded */
 const DEFAULT_MODELS: Record<Provider, string> = {
     claude: "claude-sonnet-4-5", openai: "gpt-4.1-mini", gemini: "gemini-flash-latest", deepseek: "deepseek-chat",
-    xai: "grok-4", mistral: "mistral-medium-latest", groq: "llama-3.3-70b-versatile", openrouter: "openrouter/auto",
+    xai: "grok-4", mistral: "mistral-medium-latest", groq: "llama-3.3-70b-versatile", openrouter: "openrouter/auto", local: "gemma3:4b",
 };
 
 function errorText(status: number, body: any): string {
     const msg = body?.error?.message ?? body?.message ?? "";
+    if (status === 0) return "Local AI isn't running. Start Ollama, or install it with the VEYA-AI installer (Repair → Local AI).";
     if (status === 401 || status === 403) return "API key is invalid or lacks permission.";
     if (status === 404) return `Model not found – VEYA tried to switch to another model automatically. ${msg}`.trim();
     if (status === 413) return "The file is too large for the AI provider.";
@@ -267,20 +332,28 @@ function buildRequest(req: ChatRequest, key: string, stream: boolean): { url: st
                     }),
                 },
             };
-        case "openai": case "deepseek": case "xai": case "mistral": case "groq": case "openrouter": {
-            const messages = rest.map(m => ({ role: m.role, content: toOpenAI(m.parts) }));
+        case "openai": case "deepseek": case "xai": case "mistral": case "groq": case "openrouter": case "local": {
+            let messages: any[] = rest.map(m => ({ role: m.role, content: toOpenAI(m.parts) }));
+            let sys = system;
+            if (req.provider === "local") {
+                // older turns first get shortened, then the system prompt (which holds the channel log)
+                const recent = messages.slice(-6);
+                messages = recent.map((m, i) => typeof m.content === "string" ? { ...m, content: clipMiddle(m.content, i === recent.length - 1 ? 3000 : 900) } : m);
+                const used = messages.reduce((n, m) => n + (typeof m.content === "string" ? m.content.length : 400), 0);
+                if (sys) sys = clipMiddle(sys, Math.max(2500, LOCAL_BUDGET - used));
+            }
             return {
                 url: `${COMPAT_BASE[req.provider]}/chat/completions`,
                 init: {
                     method: "POST",
                     headers: {
-                        ...json, Authorization: `Bearer ${key}`,
+                        ...json, ...(req.provider === "local" ? {} : { Authorization: `Bearer ${key}` }),
                         ...(req.provider === "openrouter" ? { "HTTP-Referer": "https://github.com/getveya/VEYA-AI", "X-Title": "VEYA AI" } : {}),
                     },
                     body: JSON.stringify({
                         model: req.model,
                         ...(req.provider === "openai" ? { max_completion_tokens: maxTokens } : { max_tokens: maxTokens }),
-                        messages: system ? [{ role: "system", content: system }, ...messages] : messages,
+                        messages: sys ? [{ role: "system", content: sys }, ...messages] : messages,
                         stream,
                     }),
                 },
@@ -356,6 +429,7 @@ const FAMILY: Record<Provider, RegExp[]> = {
     mistral: [/medium-latest/, /large-latest/, /medium/, /large/, /small-latest/, /small/],
     groq: [/gpt-oss-120b/, /llama-3\.3-70b/, /70b/, /kimi/, /qwen/, /llama/],
     openrouter: [/^openrouter\/auto$/],
+    local: [/gemma3/, /qwen/, /llama/, /mistral/],
 };
 
 /** Best model first */
@@ -393,6 +467,9 @@ async function fetchModelList(provider: Provider, key: string): Promise<string[]
     if (provider === "claude") {
         const body = await get("https://api.anthropic.com/v1/models?limit=1000", { "x-api-key": key, "anthropic-version": "2023-06-01" });
         ids = (body?.data ?? []).map((m: any) => m.id);
+    } else if (provider === "local") {
+        const body = await get(`${OLLAMA}/api/tags`, {});
+        ids = (body?.models ?? []).map((m: any) => String(m.name));
     } else if (provider === "gemini") {
         const body = await get("https://generativelanguage.googleapis.com/v1beta/models?pageSize=1000", { "x-goog-api-key": key });
         ids = (body?.models ?? [])
@@ -402,7 +479,7 @@ async function fetchModelList(provider: Provider, key: string): Promise<string[]
         const body = await get(`${COMPAT_BASE[provider]}/models`, { Authorization: `Bearer ${key}` });
         ids = (body?.data ?? []).map((m: any) => m.id);
     }
-    ids = ids.filter(id => typeof id === "string" && MODEL_RE.test(id) && !NOT_CHAT.test(id));
+    ids = ids.filter(id => typeof id === "string" && MODEL_RE.test(id) && (provider === "local" ? !/embed/i.test(id) : !NOT_CHAT.test(id)));
     if (provider === "openrouter" && !ids.includes("openrouter/auto")) ids.unshift("openrouter/auto");
     const models = rankModels(provider, ids);
     modelCache.set(provider, { at: Date.now(), models });
@@ -464,7 +541,7 @@ async function sendWithFallback(req: ChatRequest, key: string, stream: boolean, 
     for (let attempt = 0; attempt < MAX_TRIES; attempt++) {
         tried.add(req.model);
         const { url, init } = buildRequest(req, key, stream);
-        res = await fetch(url, { ...init, signal: signal ?? AbortSignal.timeout(180_000) });
+        res = await fetch(url, { ...init, signal: signal ?? AbortSignal.timeout(req.provider === "local" ? 600_000 : 180_000) });
         if (res.ok && (!stream || res.body)) {
             lastGood.set(req.provider, req.model);
             return { res, req };
@@ -484,8 +561,8 @@ async function sendWithFallback(req: ChatRequest, key: string, stream: boolean, 
 export async function listModels(_: IpcMainInvokeEvent, provider: Provider, refresh = false): Promise<{ ok: boolean; models: string[]; error?: string; }> {
     await pendingImport;
     if (!PROVIDERS.includes(provider)) return { ok: false, models: [], error: "Unknown provider." };
-    const key = readKeys()[provider];
-    if (!key) return { ok: false, models: [], error: "No API key saved." };
+    const key = (await allKeys())[provider];
+    if (!key) return { ok: false, models: [], error: provider === "local" ? "Local AI isn't running." : "No API key saved." };
     if (refresh) modelCache.delete(provider);
     try { return { ok: true, models: await fetchModelList(provider, key) }; } catch (e: any) { return { ok: false, models: [], error: String(e?.message ?? e) }; }
 }
@@ -493,8 +570,8 @@ export async function listModels(_: IpcMainInvokeEvent, provider: Provider, refr
 /** Tries the best models one after another until one answers – returns the first that works */
 export async function autoPickModel(_: IpcMainInvokeEvent, provider: Provider): Promise<{ ok: boolean; model?: string; tried: string[]; error?: string; }> {
     await pendingImport;
-    const key = readKeys()[provider];
-    if (!key) return { ok: false, tried: [], error: "No API key saved." };
+    const key = (await allKeys())[provider];
+    if (!key) return { ok: false, tried: [], error: provider === "local" ? "Local AI isn't running." : "No API key saved." };
     modelCache.delete(provider);
     let list: string[];
     try { list = await fetchModelList(provider, key); } catch (e: any) { return { ok: false, tried: [], error: String(e?.message ?? e) }; }
@@ -520,13 +597,32 @@ const NEED_LABEL = { image: "Images", audio: "Voice messages" };
  * Get the key – and if the active provider can't handle images/audio, automatically
  * switch to another provider that has a stored key.
  */
+/** Stored keys + "local" when Ollama is running (it needs no key) */
+async function allKeys(): Promise<Partial<Record<Provider, string>>> {
+    const keys = { ...readKeys() };
+    if (await ollamaReady()) keys.local = "ollama";
+    return keys;
+}
+
+/** A local model that can do what's needed (e.g. images), if one is installed */
+async function localModelFor(needs: Array<"image" | "audio">): Promise<string | null> {
+    if (!needs.length) return null;
+    if (needs.includes("audio")) return null;
+    try { return (await fetchModelList("local", "ollama")).find(m => LOCAL_VISION.test(m)) ?? null; } catch { return null; }
+}
+
 async function prepare(req: ChatRequest): Promise<{ error: string; } | { key: string; req: ChatRequest; }> {
     await pendingImport;
     const invalid = validate(req);
     if (invalid) return { error: invalid };
-    const keys = readKeys();
+    const keys = await allKeys();
+    if (!keys.local && (req.provider === "local" || !Object.keys(keys).length) && await startOllama()) keys.local = "ollama";
     const needs = [...needsOf(req.messages)];
-    const can = (p: Provider) => needs.every(n => CAPS[p].includes(n));
+    const localVision = keys.local ? await localModelFor(needs) : null;
+    const can = (p: Provider) => p === "local" ? (!needs.length || !!localVision) : needs.every(n => CAPS[p].includes(n));
+    if (req.provider === "local" && !keys.local && !needs.length) {
+        return { error: "Local AI isn't running. Start Ollama, or install it with the VEYA-AI installer (open VEYA-AI → Local AI)." };
+    }
 
     let provider = req.provider;
     if (!can(provider) || !keys[provider]) {
@@ -538,7 +634,8 @@ async function prepare(req: ChatRequest): Promise<{ error: string; } | { key: st
         }
         provider = alt;
     }
-    const wanted = provider === req.provider ? req.model : (req.models?.[provider] || "auto");
+    let wanted = provider === req.provider ? req.model : (req.models?.[provider] || "auto");
+    if (provider === "local" && localVision && !LOCAL_VISION.test(wanted)) wanted = localVision;
     const model = await resolveModel(provider, keys[provider]!, wanted);
     if (!MODEL_RE.test(model)) return { error: "Invalid model name." };
     return { key: keys[provider]!, req: { ...req, provider, model } };
@@ -795,4 +892,68 @@ export async function installUpdate(_: IpcMainInvokeEvent): Promise<{ ok: boolea
     } catch (e: any) {
         return { ok: false, error: String(e?.message ?? e) };
     }
+}
+
+// ─── Local AI: download models & open the installer's local-AI setup ─────────
+
+const pulls = new Map<string, { status: string; total: number; done: number; finished: boolean; error?: string; }>();
+
+/** Download a model into Ollama (progress via localPullStatus) */
+export async function localPull(_: IpcMainInvokeEvent, model: string) {
+    if (!/^[\w.\-:/]{1,60}$/.test(model)) return { ok: false, error: "Invalid model name." };
+    if (pulls.get(model) && !pulls.get(model)!.finished) return { ok: true };
+    const st = { status: "Starting…", total: 0, done: 0, finished: false } as { status: string; total: number; done: number; finished: boolean; error?: string; };
+    pulls.set(model, st);
+    (async () => {
+        try {
+            const res = await fetch(`${OLLAMA}/api/pull`, { method: "POST", body: JSON.stringify({ model, stream: true }) });
+            if (!res.ok || !res.body) throw new Error(`Ollama answered ${res.status}`);
+            const reader = res.body.getReader(); const dec = new TextDecoder(); let buf = "";
+            for (; ;) {
+                const { value, done } = await reader.read();
+                if (done) break;
+                buf += dec.decode(value, { stream: true });
+                const lines = buf.split("\n"); buf = lines.pop() ?? "";
+                for (const l of lines) {
+                    if (!l.trim()) continue;
+                    const j = JSON.parse(l);
+                    if (j.error) throw new Error(j.error);
+                    st.status = j.status ?? st.status;
+                    if (j.total) { st.total = j.total; st.done = j.completed ?? st.done; }
+                }
+            }
+            st.status = "Done";
+            modelCache.delete("local"); ollamaSeen.at = 0;
+        } catch (e: any) {
+            st.error = e?.cause?.code === "ECONNREFUSED" ? "Ollama isn't running." : String(e?.message ?? e);
+        } finally { st.finished = true; }
+    })();
+    return { ok: true };
+}
+
+export function localPullStatus(_: IpcMainInvokeEvent, model: string) {
+    return pulls.get(model) ?? null;
+}
+
+/** Start the VEYA-AI app on its "Local AI" page (installs Ollama + a model) */
+export function openLocalSetup(_: IpcMainInvokeEvent) {
+    const candidates = [join(INSTALL_DIR, "VEYA-AI.exe"), join(INSTALL_DIR, "app", "VEYA-AI.exe")];
+    const exe = candidates.find(f => existsSync(f));
+    if (!exe) return { ok: false, error: "VEYA-AI app not found – run the installer again." };
+    try {
+        spawn(exe, ["--local-ai"], { detached: true, stdio: "ignore" }).unref();
+        return { ok: true };
+    } catch (e: any) { return { ok: false, error: String(e?.message ?? e) }; }
+}
+
+// ─── Share cards: put a PNG into the clipboard (paste into any chat with Ctrl+V) ─
+
+export function copyImage(_: IpcMainInvokeEvent, dataUrl: string) {
+    if (typeof dataUrl !== "string" || !dataUrl.startsWith("data:image/png;base64,") || dataUrl.length > 15_000_000) return false;
+    try {
+        const img = nativeImage.createFromDataURL(dataUrl);
+        if (img.isEmpty()) return false;
+        clipboard.writeImage(img);
+        return true;
+    } catch { return false; }
 }

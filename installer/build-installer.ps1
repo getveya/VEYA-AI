@@ -12,10 +12,12 @@
     .\build-installer.ps1 -Remote "getveya/VEYA-AI"           # Default: repo for updates & source code link
     .\build-installer.ps1 -CertFile .\cert.pfx -CertPassword "..." # signed (no SmartScreen warning)
     .\build-installer.ps1 -Dir                                   # quick test build without .exe
+    .\build-installer.ps1 -Dev                                   # private developer build (with src\userplugins\veyaDev)
 #>
 
 param(
     [switch]$Dir,
+    [switch]$Dev,
     [string]$Remote = "getveya/VEYA-AI",
     [string]$CertFile = "",
     [string]$CertPassword = ""
@@ -56,6 +58,15 @@ Ok "pnpm $(pnpm --version)"
 # 2 - Build VEYA
 Step 2 "Building VEYA (Vencord build with VEYA plugin)"
 Push-Location $root
+# The private developer plugin never goes into a public build: hide it during the build
+$devPlugin = Join-Path $root "src\userplugins\veyaDev"
+$devHidden = Join-Path $root "src\userplugins\.veyaDev"
+if (Test-Path $devHidden) {
+    if (Test-Path $devPlugin) { Remove-Item $devHidden -Recurse -Force } else { Rename-Item $devHidden "veyaDev" }
+}
+$hidDev = $false
+if ((Test-Path $devPlugin) -and -not $Dev) { Rename-Item $devPlugin ".veyaDev"; $hidDev = $true; Ok "Public build - developer tools left out" }
+elseif ($Dev) { if (Test-Path $devPlugin) { Ok "DEVELOPER build - only for your own PC, never upload it" } else { Fail "-Dev: src\userplugins\veyaDev is missing" } }
 try {
     pnpm install --frozen-lockfile
     if ($LASTEXITCODE -ne 0) { Fail "pnpm install failed" }
@@ -68,7 +79,10 @@ try {
     pnpm buildStandalone
     if ($LASTEXITCODE -ne 0) { Fail "Build failed" }
     if (-not (Test-Path "dist\patcher.js")) { Fail "dist\patcher.js is missing after the build" }
-} finally { Pop-Location }
+} finally {
+    if ($hidDev -and (Test-Path $devHidden)) { Rename-Item $devHidden "veyaDev" }
+    Pop-Location
+}
 Ok "Build done"
 
 # 3 - Assemble payload
@@ -130,6 +144,12 @@ try {
 } finally { Pop-Location }
 
 $exe = Get-ChildItem "$installer\dist" -Filter "*.exe" -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+if ($exe -and $Dev -and -not $Dir) {
+    $devName = $exe.Name -replace '\.exe$', '-DEV.exe'
+    Move-Item $exe.FullName (Join-Path $exe.DirectoryName $devName) -Force
+    $exe = Get-Item (Join-Path $exe.DirectoryName $devName)
+    Write-Host "  DEVELOPER build - keep it on your PC, never upload it as a release." -ForegroundColor Magenta
+}
 Write-Host ""
 if ($exe -and -not $Dir) {
     Write-Host "  Done: $($exe.FullName)" -ForegroundColor Cyan

@@ -12,7 +12,8 @@ import {
     loadActiveTheme, type ParsedPackage, parsePackage, togglePlugin, trustPlugin
 } from "./PluginEngine";
 import { hashCode, needsReview, ORIGIN_LABEL, overallRisk, type RiskFinding, scanCode } from "./security";
-import { currentProvider, LANGUAGES, modelFor, PROVIDERS, setModelFor, settings, targetLanguage } from "./settings";
+import { currentProvider, LANGUAGES, LOCAL_MODELS, modelFor, PROVIDERS, setModelFor, settings, targetLanguage } from "./settings";
+import { openTour } from "./tour";
 import { checkUpdates } from "./updater";
 import { allKnowledge, loadKnowledge } from "./prompt";
 import { RemindersList } from "./reminders";
@@ -984,6 +985,94 @@ function KeyRow({ p, has, onChanged }: { p: typeof PROVIDERS[number]; has: boole
     );
 }
 
+// Local AI (Ollama): no key – status, models, download
+function LocalRow({ onChanged }: { onChanged: () => void; }) {
+    const [st, setSt] = useState<Awaited<ReturnType<typeof Native.localStatus>> | null>(null);
+    const [pull, setPull] = useState<{ model: string; status: string; total: number; done: number; finished: boolean; error?: string; } | null>(null);
+    const [msg, setMsg] = useState<Notice>(null);
+    const [busy, setBusy] = useState(false);
+    const s = settings.use(["aiProvider", "modelLocal"]);
+    const active = s.aiProvider === "local";
+    const refresh = () => Native.localStatus().then(r => { setSt(r); onChanged(); });
+    useEffect(() => { refresh(); }, []);
+    useEffect(() => {
+        if (!pull || pull.finished) return;
+        const t = setInterval(async () => {
+            const r = await Native.localPullStatus(pull.model);
+            if (r) setPull({ model: pull.model, ...r });
+            if (r?.finished) { clearInterval(t); refresh(); }
+        }, 700);
+        return () => clearInterval(t);
+    }, [pull?.model, pull?.finished]);
+
+    const gb = (b: number) => (b / 1073741824).toFixed(1) + " GB";
+    const has = !!st?.running && st.models.length > 0;
+    async function test() {
+        setBusy(true); setMsg({ ok: true, msg: "Asking the local AI… (the first answer can take up to a minute while the model loads)" });
+        const r = await Native.chatOnce({ provider: "local", model: modelFor("local"), messages: [{ role: "user", content: "Reply only with: OK" }], maxTokens: 64 });
+        setBusy(false);
+        setMsg(r.error ? { ok: false, msg: r.error } : { ok: true, msg: `Local AI works${r.model ? ` – ${r.model}` : ""}.` });
+    }
+    async function download(model: string) {
+        const r = await Native.localPull(model);
+        if (!r.ok) setMsg({ ok: false, msg: r.error || "Download failed." });
+        else setPull({ model, status: "Starting…", total: 0, done: 0, finished: false });
+    }
+
+    return (
+        <div style={{ ...S.card, borderColor: active ? VEYA_COLORS.accentBorder : "var(--background-modifier-accent)" }}>
+            <div style={S.row}>
+                <b style={{ ...S.title, flex: 1 }}>Local AI (Ollama)<span style={{ ...S.tag, marginLeft: "8px", fontWeight: 500 }}>Free · no key · private</span></b>
+                {st?.running
+                    ? <span style={S.badge(VEYA_COLORS.accent)}><VIcon name="check" size={11} /> Running{st.version ? ` · v${st.version}` : ""}</span>
+                    : <span style={S.tag}>{st ? "Not running" : "Checking…"}</span>}
+                {active ? <span style={S.badge(VEYA_COLORS.accent)}>Active</span>
+                    : <Btn kind="ghost" disabled={!has} onClick={() => { settings.store.aiProvider = "local"; }}>Use</Btn>}
+            </div>
+            <div style={S.muted}>
+                Runs completely on your PC – nothing is sent to the internet. Slower than cloud AIs and needs a decent PC (8 GB RAM or more).
+                Voice messages still need a Gemini or Groq key.
+            </div>
+            {!st?.running && st && (
+                <div style={S.row}>
+                    <Btn kind="accent" icon="import" onClick={async () => { const r = await Native.openLocalSetup(); setMsg(r.ok ? { ok: true, msg: "The VEYA-AI app is opening – install the local AI there. Discord can stay open." } : { ok: false, msg: r.error || "" }); }}>Set up local AI</Btn>
+                    <Btn icon="refresh" onClick={refresh}>Check again</Btn>
+                    <span style={S.muted}>About 1 GB for Ollama + 2–5 GB for a model.</span>
+                </div>
+            )}
+            {st?.running && (
+                <>
+                    <div style={S.row}>
+                        <Field label={`Model${st.models.length ? ` (${st.models.length} installed)` : ""}`} style={{ flex: 1, minWidth: "200px" }}>
+                            <select value={modelFor("local")} onChange={e => setModelFor("local", e.currentTarget.value)} style={S.input}>
+                                <option value="auto">Auto – best installed (recommended)</option>
+                                {st.models.map(m => <option key={m.name} value={m.name}>{m.name} · {gb(m.size)}</option>)}
+                            </select>
+                        </Field>
+                        {has && <Btn icon="refresh" onClick={test} disabled={busy} style={{ alignSelf: "flex-end" }}>Test</Btn>}
+                    </div>
+                    <div style={{ ...S.label, marginTop: "4px" }}>Download a model</div>
+                    {LOCAL_MODELS.map(m => {
+                        const installed = st.models.some(x => x.name === m.id || x.name === m.id + ":latest");
+                        const mine = pull?.model === m.id && !pull.finished;
+                        return (
+                            <div key={m.id} style={{ ...S.row, padding: "4px 0" }}>
+                                <span style={{ flex: 1, minWidth: 0 }}><b style={{ color: "var(--header-primary)" }}>{m.label}</b> <span style={S.muted}>· {m.size} · {m.ram}</span></span>
+                                {installed ? <span style={S.badge(VEYA_COLORS.accent)}>Installed</span>
+                                    : mine ? <span style={S.muted}>{pull!.total ? `${Math.round(pull!.done / pull!.total * 100)} % · ${gb(pull!.done)} / ${gb(pull!.total)}` : pull!.status}</span>
+                                        : <Btn icon="import" disabled={!!pull && !pull.finished} onClick={() => download(m.id)}>Download</Btn>}
+                            </div>
+                        );
+                    })}
+                    {pull?.finished && pull.error && <div style={{ fontSize: "12.5px", color: DANGER }}>{pull.error}</div>}
+                    {!has && <div style={{ fontSize: "12.5px", color: WARN }}>Ollama is running but has no model yet – download one above.</div>}
+                </>
+            )}
+            {msg && <div style={{ fontSize: "12.5px", color: msg.ok ? VEYA_COLORS.accent : DANGER }}>{msg.msg}</div>}
+        </div>
+    );
+}
+
 function LanguagePicker({ value, onChange }: { value: string; onChange: (v: string) => void; }) {
     const [open, setOpen] = useState(false);
     const [q, setQ] = useState("");
@@ -1069,7 +1158,8 @@ function KeysTab() {
                         : <>Keys are stored <b style={{ color: "var(--header-primary)" }}>encrypted</b> on your PC (only your Windows account can read them). They're only ever sent to the selected provider.</>}
                 </div>
             </div>
-            {PROVIDERS.map(p => <KeyRow key={p.id} p={p} has={!!status?.keys[p.id]} onChanged={refresh} />)}
+            <LocalRow onChanged={() => { }} />
+            {PROVIDERS.filter(p => p.id !== "local").map(p => <KeyRow key={p.id} p={p} has={!!status?.keys[p.id]} onChanged={refresh} />)}
 
             <div style={{ ...S.label, marginTop: "18px" }}>Behavior</div>
             <div style={S.card}>
@@ -1109,6 +1199,7 @@ function UpdateCheck() {
     return (
         <div style={S.row}>
             <Btn icon="refresh" onClick={run} disabled={busy}>{busy ? "Checking…" : "Check for updates"}</Btn>
+            <Btn icon="info" onClick={openTour}>Show tour again</Btn>
             {msg && <span style={{ fontSize: "12.5px", color: msg.ok ? VEYA_COLORS.accent : DANGER }}>{msg.msg}</span>}
         </div>
     );
@@ -1260,7 +1351,7 @@ function KnowledgeList() {
 }
 
 export function VeyaFeaturesPage() {
-    const s = settings.use(["persona", "customPersona", "gameContext", "autoTranslate", "translateTarget", "motionEffects", "writerButton"]);
+    const s = settings.use(["persona", "customPersona", "gameContext", "autoTranslate", "translateTarget", "motionEffects", "writerButton", "startupIntro", "tldrButton", "smartReminders", "profileBadge"]);
     return (
         <PageShell hint={false}>
             <div style={S.label}>Personality</div>
@@ -1284,6 +1375,10 @@ export function VeyaFeaturesPage() {
 
             <div style={{ ...S.label, marginTop: "18px" }}>Appearance</div>
             <div style={S.card}>
+                <Toggle label="Startup animation" desc="The VEYA logo builds itself from bubbles and falls apart when Discord starts." value={s.startupIntro} onChange={v => { s.startupIntro = v; }} />
+                <Toggle label="TL;DR button" desc="Long messages (600+ characters) get a small TL;DR button that summarizes them in one or two lines." value={s.tldrButton} onChange={v => { s.tldrButton = v; }} />
+                <Toggle label="Smart reminders" desc="When a message mentions a time (“Saturday 8 PM”, “morgen 18 Uhr”), VEYA offers to remind you 30 minutes before." value={s.smartReminders} onChange={v => { s.smartReminders = v; }} />
+                <Toggle label="VEYA badge" desc="You get the VEYA badge on your profile – only other VEYA users can see it, everyone else sees nothing. Off = no badge for you and none shown for others." value={s.profileBadge} onChange={v => { s.profileBadge = v; }} />
                 <Toggle label="VEYA Motion" desc="Smooth animations across Discord: messages slide in, menus and windows pop open." value={s.motionEffects} onChange={v => { s.motionEffects = v; }} />
             </div>
 

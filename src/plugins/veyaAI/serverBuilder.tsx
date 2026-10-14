@@ -42,7 +42,42 @@ interface BuildOptions {
     emojis: boolean;
     logo: boolean;
     banner: boolean;
+    automod: boolean;
     wipe: boolean;
+}
+
+// ─── Templates (one click fills the description) ─────────────────────────────
+
+const TEMPLATES: { label: string; text: string; }[] = [
+    { label: "🎮 Gaming community", text: "Gaming community for about 200 people. Rules, announcements, roles to pick your rank and games, team finder, clips, memes, events and tournaments, voice channels for squads, a support/ticket area and a private staff area." },
+    { label: "👥 Friends hangout", text: "Small chill server for a group of friends. General chat, memes, music, gaming, photos, plans for meeting up, a few voice channels and a private AFK channel." },
+    { label: "🎥 Content creator", text: "Community server for a content creator (YouTube/TikTok/Twitch). Announcements for new videos and streams, fan art, clips, suggestions, giveaways, member/sub roles, stream chat and voice hangouts, mod area." },
+    { label: "📚 Study group", text: "Study server for students. Subjects as categories, homework help, exam dates, resources and notes, focus voice rooms (pomodoro), off-topic and a quiet library channel." },
+    { label: "🛒 Shop & support", text: "Server for a small online shop/brand. Announcements, product updates, FAQ, order help, support tickets, reviews, giveaways and a staff area. Professional and clean." },
+    { label: "🏆 Esports team", text: "Esports team server. Team announcements, schedule, scrims, VOD review, strategies, tryouts with an application channel, roles for players/coaches/management, team voice rooms and a public fan area." },
+    { label: "🎭 Roleplay", text: "Roleplay server. Lore and rules, character sheets, RP channels by location, out-of-character chat, events, staff for game masters and a voice channel for sessions." },
+];
+
+// ─── AutoMod (Discord's own filter – runs even when VEYA is off) ──────────────
+
+async function setupAutoMod(guildId: string, problems: string[]) {
+    let existing: any[] = [];
+    try { existing = await rest("get", `/guilds/${guildId}/auto-moderation/rules`) ?? []; } catch { }
+    const has = (type: number) => existing.some(r => r.trigger_type === type);
+    const block = [{ type: 1, metadata: { custom_message: "Blocked by the server's safety filter." } }];
+    const rules: any[] = [];
+    if (!has(4)) rules.push({ name: "VEYA · Bad words & slurs", event_type: 1, trigger_type: 4, trigger_metadata: { presets: [1, 2, 3] }, actions: block, enabled: true });
+    if (!has(3)) rules.push({ name: "VEYA · Spam", event_type: 1, trigger_type: 3, actions: [{ type: 1 }], enabled: true });
+    if (!has(5)) rules.push({ name: "VEYA · Mention spam", event_type: 1, trigger_type: 5, trigger_metadata: { mention_total_limit: 6, mention_raid_protection_enabled: true }, actions: block, enabled: true });
+    if (!existing.some(r => r.name === "VEYA · Scam links")) rules.push({
+        name: "VEYA · Scam links", event_type: 1, trigger_type: 1, enabled: true, actions: block,
+        trigger_metadata: { keyword_filter: ["*free nitro*", "*nitro for free*", "*discord-gift*", "*discordgift*", "*dlscord*", "*disc0rd*", "*steamcommunlty*", "*steamcomunity*", "*free robux*", "*airdrop*", "*claim your reward*", "*@everyone http*"] },
+    });
+    for (const r of rules) {
+        try { await rest("post", `/guilds/${guildId}/auto-moderation/rules`, r); } catch (e: any) { problems.push(`AutoMod "${r.name}": ${e.message}`); }
+        await sleep(500);
+    }
+    return rules.length;
 }
 
 // ─── Permissions ─────────────────────────────────────────────────────────────
@@ -165,7 +200,7 @@ function Builder({ guild, close }: { guild: any; close: () => void; }) {
     const roleIconsOk = guild.premiumTier >= 2 || features.has?.("ROLE_ICONS");
     const [desc, setDesc] = useState("");
     const [style, setStyle] = useState<NameStyle>("aesthetic");
-    const [opts, setOpts] = useState<BuildOptions>({ roles: true, channels: true, messages: true, roleIcons: roleIconsOk, emojis: true, logo: true, banner: bannerOk, wipe: false });
+    const [opts, setOpts] = useState<BuildOptions>({ roles: true, channels: true, messages: true, roleIcons: roleIconsOk, emojis: true, logo: true, banner: bannerOk, automod: true, wipe: false });
     const [plan, setPlan] = useState<Plan | null>(null);
     const [feedback, setFeedback] = useState("");
     const [confirmName, setConfirmName] = useState("");
@@ -268,11 +303,11 @@ Reply with ONLY JSON: {"emojis":[{"name":"...","svg":"<svg ...>…</svg>"}]}`
                     </div>
                 )}
                 <div style={{ fontSize: 13, color: "var(--text-muted)" }}>
-                    Creates {plan.roles.length} roles, {plan.categories.length} categories, {nChannels} channels{plan.emojis?.length ? `, ${plan.emojis.length} emojis` : ""}. Takes about {Math.max(10, Math.ceil((plan.roles.length + plan.categories.length + nChannels + (plan.emojis?.length ?? 0) + (opts.wipe ? existingCh : 0)) * 0.6))} seconds – progress is shown at the top.
+                    Creates {plan.roles.length} roles, {plan.categories.length} categories, {nChannels} channels{plan.emojis?.length ? `, ${plan.emojis.length} emojis` : ""}{opts.automod ? " and AutoMod safety rules" : ""}. Takes about {Math.max(10, Math.ceil((plan.roles.length + plan.categories.length + nChannels + (plan.emojis?.length ?? 0) + (opts.wipe ? existingCh : 0)) * 0.6))} seconds – progress is shown at the top.
                 </div>
                 <div className="veya-row end">
                     <button className="veya-btn" onClick={() => setPlan(null)} disabled={busy}><VIcon name="back" size={14} dot={false} /> Back</button>
-                    <button className={`veya-btn ${opts.wipe ? "danger" : "primary"}`} disabled={busy || !wipeOk} onClick={() => { close(); buildServer(guild.id, plan, opts.wipe); }}>
+                    <button className={`veya-btn ${opts.wipe ? "danger" : "primary"}`} disabled={busy || !wipeOk} onClick={() => { close(); buildServer(guild.id, plan, opts.wipe, opts.automod); }}>
                         <VIcon name="tool" size={14} dot={false} /> {opts.wipe ? "Delete & rebuild" : "Build now"}
                     </button>
                 </div>
@@ -282,6 +317,12 @@ Reply with ONLY JSON: {"emojis":[{"name":"...","svg":"<svg ...>…</svg>"}]}`
 
     return (
         <>
+            <div className="veya-field">
+                <span>Start from a template</span>
+                <div className="veya-writer-modes" style={{ flexWrap: "wrap" }}>
+                    {TEMPLATES.map(t => <button key={t.label} className={desc === t.text ? "on" : ""} onClick={() => setDesc(t.text)}>{t.label}</button>)}
+                </div>
+            </div>
             <label className="veya-field">
                 <span>What should your server be like?</span>
                 <textarea className="veya-textarea" rows={5} autoFocus value={desc} onChange={e => setDesc(e.currentTarget.value)}
@@ -309,6 +350,7 @@ Reply with ONLY JSON: {"emojis":[{"name":"...","svg":"<svg ...>…</svg>"}]}`
                     <Check label={`Role icons${roleIconsOk ? "" : " (boost level 2)"}`} checked={opts.roleIcons} disabled={!roleIconsOk} onChange={() => toggle("roleIcons")} />
                     <Check label="Server logo" checked={opts.logo} onChange={() => toggle("logo")} />
                     <Check label={`Banner${bannerOk ? "" : " (boost level 2)"}`} checked={opts.banner} disabled={!bannerOk} onChange={() => toggle("banner")} />
+                    <Check label="AutoMod safety rules" hint="Discord's own filter: slurs, spam, mention spam and scam links (free nitro, fake Steam …)" checked={opts.automod} onChange={() => toggle("automod")} />
                 </div>
             </div>
 
@@ -406,7 +448,7 @@ async function wipeServer(guildId: string, step: (d: string) => void, problems: 
     }
 }
 
-async function buildServer(guildId: string, plan: Plan, wipe: boolean) {
+async function buildServer(guildId: string, plan: Plan, wipe: boolean, automod = false) {
     const guild: any = GuildStore.getGuild(guildId);
     const features: Set<string> = guild?.features ?? new Set();
     const community = features.has?.("COMMUNITY");
@@ -414,7 +456,7 @@ async function buildServer(guildId: string, plan: Plan, wipe: boolean) {
     const nChannels = plan.categories.reduce((a, c) => a + c.channels.length, 0);
     const msgCount = plan.categories.reduce((a, c) => a + c.channels.filter(x => x.message).length, 0);
     const wipeCount = wipe ? guildChannels(guildId).length + (GuildRoleStore.getSortedRoles(guildId)?.length ?? 0) : 0;
-    const total = wipeCount + plan.roles.length + plan.categories.length + nChannels + msgCount + (plan.emojis?.length ?? 0) + (plan.logo_svg ? 1 : 0) + (plan.banner_svg ? 1 : 0);
+    const total = (automod ? 1 : 0) + wipeCount + plan.roles.length + plan.categories.length + nChannels + msgCount + (plan.emojis?.length ?? 0) + (plan.logo_svg ? 1 : 0) + (plan.banner_svg ? 1 : 0);
     let done = 0;
     const step = (detail: string) => { done++; task.update(done / Math.max(1, total), detail); };
     const problems: string[] = [];
@@ -532,6 +574,11 @@ async function buildServer(guildId: string, plan: Plan, wipe: boolean) {
         if (plan.banner_svg) {
             try { await rest("patch", `/guilds/${guildId}`, { banner: await svgToPng(plan.banner_svg, 960, 540) }); } catch (e: any) { problems.push(`Banner: ${e.message}`); }
             step("Banner");
+        }
+
+        if (automod) {
+            await setupAutoMod(guildId, problems);
+            step("AutoMod safety rules");
         }
 
         if (problems.length) {

@@ -74,6 +74,8 @@ export function showUpdate(info: UpdateInfo) {
 /** Called once on start. manual = from the About page (also shows "you're up to date") */
 export async function checkUpdates(manual = false): Promise<UpdateInfo> {
     const info = await Native.checkForUpdate();
+    // private developer build: never offer the public update on its own (it would remove the dev tools)
+    if (!manual && (window as any).Vencord?.Plugins?.plugins?.VEYADev) return info;
     if (info.available && (manual || settings.store.skippedUpdate !== info.version)) showUpdate(info);
     return info;
 }

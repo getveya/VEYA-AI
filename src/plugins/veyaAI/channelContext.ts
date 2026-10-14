@@ -29,7 +29,7 @@ function time(ts: any): string {
 }
 
 export function cleanContent(m: any): string {
-    let text: string = m.content ?? "";
+    let text: string = (m.content ?? "").replace(/[\u2063\u2064]/g, "");
     // Make mentions readable
     text = text.replace(/<@!?(\d+)>/g, (_, id) => "@" + displayName(UserStore.getUser(id)));
     text = text.replace(/<#(\d+)>/g, (_, id) => "#" + (ChannelStore.getChannel(id) as any)?.name);

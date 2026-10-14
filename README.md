@@ -17,13 +17,18 @@
 ## Features
 
 - **AI chat** – open it from the VEYA button next to the emoji picker or the small VEYA logo in the top-right corner. It reads the open channel, streams answers live, renders Discord markdown and can be dragged and resized.
-- **Message actions** – right-click any message to translate it, explain it, get a reply suggestion, explain an image, copy text out of an image or transcribe a voice message.
+- **Local AI (no key)** – the installer can set up [Ollama](https://ollama.com) and a model on your PC. Everything runs locally and offline; needs ~3–5 GB of disk space and 8 GB RAM.
+- **Message actions** – right-click any message to translate it, explain it, get a reply suggestion, share it as an image, explain an image, copy text out of an image or transcribe a voice message.
+- **Ask the server** – right-click a server or chat and ask a question; VEYA searches the messages and answers with jump links to the sources.
+- **TL;DR & smart reminders** – long messages get a TL;DR button, messages with a time ("Saturday 8 PM") get a one-click reminder.
+- **Your week on Discord** – a shareable recap of where you were active.
+- **VEYA badge** – a profile badge that only other VEYA users can see (can be turned off).
 - **Channel summaries** – the latest messages of a channel as a short bullet list.
 - **Catch up** – "What did I miss?" summarises everything that arrived since you last read a channel.
 - **Reminders** – right-click a message → remind me later; a notification jumps right back to it.
 - **Live translation** – optional translations under foreign-language messages.
 - **Writing helper** – fix, shorten, soften or translate your draft right in the message box.
-- **Server builder** – right-click your server, describe it, and VEYA creates roles, categories, channels, welcome texts and optionally a logo and banner (only adds, never deletes).
+- **Server builder** – right-click your server, pick a template or describe it, and VEYA creates roles, categories, channels, welcome texts, Discord AutoMod safety rules and optionally a logo and banner (only adds, never deletes).
 - **Server analysis** – activity stats, top channels and members, embeds and bots plus an AI report with suggestions.
 - **Server knowledge, personas & game companion** – teach VEYA your server rules, pick a personality, and get tips for the game you are playing.
 - **Progress bar** – long tasks show their progress at the top of Discord.
@@ -40,11 +45,12 @@
 **[Download the latest VEYA-AI-Setup.exe](https://github.com/getveya/VEYA-AI/releases/latest)** from the Releases page.
 
 1. Run `VEYA-AI-Setup-<version>.exe` – **no admin rights and no Node.js required**.
-2. Optionally enter your API keys, pick your Discord version and click **Install**.
+2. Choose **Local AI** (free, no key – downloads ~3–5 GB, takes 5–20 minutes) and/or enter API keys, pick your Discord version and click **Install**.
 3. Discord restarts – the VEYA button sits next to the emoji picker.
 
 Open **VEYA-AI** from the Start menu or desktop at any time to:
 
+- **Local AI** – install or change the local model later.
 - **Repair** – if VEYA is missing after a Discord update (normally fixed automatically).
 - **Update / reinstall**
 - **Uninstall** – also available under Windows Settings → Apps.
@@ -65,6 +71,7 @@ Open **VEYA-AI** from the Start menu or desktop at any time to:
 | Mistral | [console.mistral.ai](https://console.mistral.ai/api-keys) | ✓ | ✓ | – |
 | Groq | [console.groq.com](https://console.groq.com/keys) | ✓ | – | ✓ (Whisper) |
 | OpenRouter | [openrouter.ai](https://openrouter.ai/keys) | some models | ✓ | – |
+| **Local AI** (Ollama) | no key – set up by the installer | ✓ (runs on your PC) | Gemma 3 | – |
 
 The model is set to **Auto** by default: VEYA picks the best model your key can use and switches automatically when one stops working.
 You can still pick a fixed model from the live list in Discord: **Settings → VEYA → AI & Settings** (with *Test* and *Find working model* buttons).

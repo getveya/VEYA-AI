@@ -25,11 +25,14 @@ import { rememberAck } from "./channelContext";
 import { VeyaChatHost } from "./ChatPanel";
 import { ChatState, useChatState } from "./chatStore";
 import { VeyaDialogHost } from "./dialogs";
+import { ExtrasAccessory, markOutgoing, VeyaTag, openAskServer, openWeekRecap, shareCard, startBadges, stopBadges } from "./extras";
 import { VIcon, type VeyaIconName } from "./icons";
+import { playIntro, stopIntro } from "./intro";
+import { maybeStartTour } from "./tour";
 import { VeyaOverlay } from "./Overlay";
 import { applyMotion, removeMotion } from "./profileTheme";
 import { loadKnowledge } from "./prompt";
-import { addReminder, openCustomReminder, PRESETS, startReminders, stopReminders } from "./reminders";
+import { addReminder, openCustomReminder, PRESETS, ReminderCards, startInbox, startReminders, stopInbox, stopReminders } from "./reminders";
 import { canBuild, openServerBuilder } from "./serverBuilder";
 import { openKnowledgeEditor, openServerAnalyzer } from "./serverTools";
 import { migrateModels, settings, targetLanguage } from "./settings";
@@ -140,6 +143,10 @@ const messageCtxPatch: NavContextMenuPatchCallback = (children, { message }: { m
                 })}
             /> : null,
             hasText ? <Menu.MenuItem
+                key="share" id="veya-ai-share" label="Share as image" icon={ctxIcon("copy")}
+                action={() => shareCard(`Message from ${author}`, quoted)}
+            /> : null,
+            hasText ? <Menu.MenuItem
                 key="re" id="veya-ai-reply" label="Suggest reply" icon={ctxIcon("reply")}
                 action={() => ChatState.open({
                     display: `Suggest a reply to: "${short}"`,
@@ -208,6 +215,8 @@ const guildCtxPatch: NavContextMenuPatchCallback = (children, { guild }: { guild
             <Menu.MenuItem id="veya-ai-guild" label="VEYA-AI" icon={ctxIcon("chat")}>
                 {only(
                     manage ? <Menu.MenuItem key="b" id="veya-ai-build" label="Build server with AI" icon={ctxIcon("tool")} action={() => openServerBuilder(guild.id)} /> : null,
+                    <Menu.MenuItem key="ask" id="veya-ai-ask-server" label="Ask the server" icon={ctxIcon("search")} action={() => openAskServer(guild.id)} />,
+                    <Menu.MenuItem key="week" id="veya-ai-week" label="Your week on Discord" icon={ctxIcon("summary")} action={() => openWeekRecap()} />,
                     <Menu.MenuItem key="a" id="veya-ai-analyze" label="Analyze server" icon={ctxIcon("search")} action={() => openServerAnalyzer(guild.id)} />,
                     <Menu.MenuItem key="k" id="veya-ai-knowledge" label="Edit server knowledge" icon={ctxIcon("folder")} action={() => openKnowledgeEditor(guild.id)} />,
                 )}
@@ -225,6 +234,12 @@ const channelCtxPatch: NavContextMenuPatchCallback = (children, { channel }: { c
                 label="VEYA: What did I miss?"
                 icon={ctxIcon("eye")}
                 action={() => ChatState.open({ display: "", prompt: "", action: "catchup", channelId: channel.id })}
+            />
+            <Menu.MenuItem
+                id="veya-ai-ask-chat"
+                label={channel.guild_id ? "VEYA: Ask this server" : "VEYA: Ask this chat"}
+                icon={ctxIcon("search")}
+                action={() => openAskServer(channel.guild_id ?? null, channel.id)}
             />
         </Menu.MenuGroup>
     );
@@ -247,6 +262,7 @@ function mountChat() {
             <VeyaOverlay />
             <WriterHost />
             <VeyaDialogHost />
+            <ReminderCards />
         </ErrorBoundary>
     );
 }
@@ -291,7 +307,12 @@ export default definePlugin({
         "gdm-context": channelCtxPatch,
     },
 
-    renderMessageAccessory: props => <TranslationAccessory message={props.message} />,
+    renderMessageAccessory: props => <><TranslationAccessory message={props.message} /><ExtrasAccessory message={props.message} /></>,
+
+    onBeforeMessageSend(channelId, msg) { markOutgoing(channelId, msg); },
+
+    renderMessageDecoration: props => <ErrorBoundary noop><VeyaTag userId={props.message?.author?.id} /></ErrorBoundary>,
+    renderMemberListDecorator: props => <ErrorBoundary noop><VeyaTag userId={props.user?.id} /></ErrorBoundary>,
 
     flux: {
         CHANNEL_SELECT({ channelId }: { channelId?: string; }) {
@@ -304,10 +325,14 @@ export default definePlugin({
         for (const e of SETTINGS_ENTRIES) removeFromArray(SettingsPlugin.veyaEntries, x => x.key === e.key);
         SettingsPlugin.veyaEntries.push(...SETTINGS_ENTRIES);
         addChatBarButton("VeyaWriter", WriterButton, WriterIcon);
+        if (settings.store.startupIntro) playIntro();
         mountChat();
         applyMotion();
         loadKnowledge();
         startReminders();
+        startInbox();
+        startBadges().catch(() => { });
+        maybeStartTour();
         // look for a new VEYA release a few seconds after Discord has loaded
         setTimeout(() => { checkUpdates().catch(() => { }); }, 8000);
         // Themes & plugins are handled by Vencord – remove anything older VEYA versions applied
@@ -319,9 +344,12 @@ export default definePlugin({
     stop() {
         for (const e of SETTINGS_ENTRIES) removeFromArray(SettingsPlugin.veyaEntries, x => x.key === e.key);
         removeChatBarButton("VeyaWriter");
+        stopIntro();
         unmountChat();
         removeMotion();
         stopReminders();
+        stopInbox();
+        stopBadges();
         document.getElementById("veya-ai-theme")?.remove();
     },
 });

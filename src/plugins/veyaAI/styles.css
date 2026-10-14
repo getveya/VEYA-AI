@@ -748,3 +748,88 @@ body.veya-motion [class*="focusLock_"] [role="dialog"] { animation: veya-open 0.
 .veya-update-status.ok { color: #ccff00; }
 .veya-update-status.err { color: #ff6b6b; }
 .veya-update-status a { color: #ccff00; }
+
+/* ── Startup intro: bubbles → V → falls apart ── */
+.veya-intro { position: fixed; inset: 0; z-index: 100000; pointer-events: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  background: radial-gradient(ellipse at 50% 45%, rgb(26 33 16 / 96%) 0%, rgb(5 5 5 / 97%) 60%); animation: veya-intro-bg 2.5s ease forwards; }
+@keyframes veya-intro-bg { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }
+.veya-intro .vi-logo { width: 170px; height: 170px; filter: drop-shadow(0 0 28px rgb(204 255 0 / 35%)); }
+.veya-intro svg { width: 100%; height: 100%; overflow: visible; }
+.veya-intro .vi-b { transform-box: fill-box; transform-origin: center;
+  animation: vi-in .62s cubic-bezier(.2,.9,.25,1.15) var(--d) both, vi-fall .7s cubic-bezier(.55,0,.85,.4) calc(1.55s + var(--fd)) forwards; }
+@keyframes vi-in { from { transform: translate(var(--x), var(--y)) scale(.25); opacity: 0; } 60% { opacity: 1; } to { transform: none; opacity: 1; } }
+@keyframes vi-fall { from { transform: none; opacity: 1; } to { transform: translate(var(--fx), 150px) rotate(var(--fr)) scale(.6); opacity: 0; } }
+.veya-intro .vi-path { stroke-dasharray: 100; animation: vi-draw .45s ease-out .5s both, vi-crack .25s ease-in 1.5s forwards; }
+@keyframes vi-draw { from { stroke-dashoffset: 100; } to { stroke-dashoffset: 0; } }
+@keyframes vi-crack { to { stroke-width: 0; opacity: 0; } }
+.veya-intro .vi-shine { opacity: 0; animation: vi-shine 1.6s ease .85s forwards; }
+@keyframes vi-shine { 0% { opacity: 0; } 15%, 40% { opacity: 1; } 50%, 100% { opacity: 0; } }
+.veya-intro .vi-word { font: 800 26px/1 "gg sans", "Inter", sans-serif; letter-spacing: .08em; color: #f4f7ec; opacity: 0; animation: vi-word 1.1s ease .7s forwards; }
+.veya-intro .vi-word span { color: #ccff00; }
+@keyframes vi-word { 0% { opacity: 0; transform: translateY(8px); } 25%, 70% { opacity: 1; transform: none; } 100% { opacity: 0; transform: translateY(14px); } }
+
+/* ── v1.1 extras: TL;DR / reminder chips, tour ── */
+.veya-chip-btn {
+    display: inline-flex; align-items: center; gap: 6px; margin: 4px 6px 0 0;
+    padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; cursor: pointer;
+    border: 1px solid rgba(204, 255, 0, .35); background: rgba(204, 255, 0, .08); color: var(--text-normal, var(--text-default));
+    transition: background .15s, border-color .15s;
+}
+.veya-chip-btn:hover { background: rgba(204, 255, 0, .16); border-color: #ccff00; }
+.veya-chip-btn.ghost { border-color: var(--background-modifier-accent); background: transparent; color: var(--text-muted); }
+.veya-chip-btn.ghost:hover { color: var(--text-normal, var(--text-default)); }
+.veya-chip-btn:focus-visible { outline: 2px solid var(--veya-accent); outline-offset: 2px; }
+.veya-tour { display: flex; flex-direction: column; gap: 14px; min-height: 230px; }
+.veya-tour-ico { width: 56px; height: 56px; border-radius: 16px; display: grid; place-items: center; background: rgba(204, 255, 0, .1); color: #ccff00; }
+.veya-tour h3 { font-size: 20px; font-weight: 800; color: var(--header-primary, var(--text-strong)); margin: 0; }
+.veya-tour p { font-size: 14px; line-height: 1.55; color: var(--text-normal, var(--text-default)); margin: 0; }
+.veya-tour-dots { display: flex; gap: 6px; margin-right: auto; align-items: center; }
+.veya-tour-dots i { width: 7px; height: 7px; border-radius: 99px; background: var(--background-modifier-accent); }
+.veya-tour-dots i.on { width: 20px; background: #ccff00; }
+
+/* ── Reminder as a VEYA "DM" ── */
+.veya-dm-stack { position: fixed; right: 20px; bottom: 84px; z-index: 1002; display: flex; flex-direction: column; gap: 10px; width: 360px; max-width: calc(100vw - 40px); }
+.veya-dm {
+    display: flex; gap: 12px; padding: 14px 14px 12px; border-radius: 12px;
+    background: var(--background-floating, #111214); border: 1px solid rgba(204, 255, 0, .28);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, .55), 0 0 0 1px rgba(0, 0, 0, .3);
+    animation: veya-dm-in .28s cubic-bezier(.2, .9, .3, 1.2);
+}
+@keyframes veya-dm-in { from { opacity: 0; transform: translateY(14px) scale(.97); } }
+.veya-dm-av { width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0; }
+.veya-dm-main { flex: 1; min-width: 0; }
+.veya-dm-head { display: flex; align-items: center; gap: 6px; }
+.veya-dm-head b { color: var(--header-primary, var(--text-strong)); font-size: 15px; }
+.veya-dm-head small { color: var(--text-muted); font-size: 11.5px; }
+.veya-dm-tag { background: #ccff00; color: #0b0d06; font-size: 10px; font-weight: 800; padding: 1px 5px; border-radius: 4px; }
+.veya-dm-x { margin-left: auto; background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; border-radius: 4px; display: flex; }
+.veya-dm-x:hover { background: var(--background-modifier-hover); color: var(--text-normal, var(--text-default)); }
+.veya-dm-text { margin-top: 3px; font-size: 14px; line-height: 1.4; color: var(--text-normal, var(--text-default)); }
+.veya-dm-quote { margin-top: 8px; padding: 6px 10px; border-left: 3px solid #ccff00; background: rgba(204, 255, 0, .06); border-radius: 0 6px 6px 0; font-size: 13px; color: var(--text-normal, var(--text-default)); overflow-wrap: anywhere; max-height: 66px; overflow: hidden; }
+.veya-dm-quote b { margin-right: 4px; }
+.veya-dm-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.veya-dm-btn { padding: 5px 11px; border-radius: 6px; font-size: 12.5px; font-weight: 600; cursor: pointer; border: 1px solid var(--background-modifier-accent); background: transparent; color: var(--text-normal, var(--text-default)); }
+.veya-dm-btn:hover { background: var(--background-modifier-hover); }
+.veya-dm-btn.primary { background: #ccff00; border-color: #ccff00; color: #0b0d06; }
+.veya-dm-btn.primary:hover { filter: brightness(1.08); }
+.veya-dm-btn:focus-visible, .veya-dm-x:focus-visible { outline: 2px solid #ccff00; outline-offset: 2px; }
+.veya-name-tag { display: inline-block; vertical-align: -2px; margin-left: 4px; flex-shrink: 0; }
+
+/* ── VEYA entry in the DM list ── */
+.veya-dmrow { position: relative; display: flex; align-items: center; gap: 12px; height: 42px; margin: 1px 8px; padding: 0 8px; border-radius: 4px; cursor: pointer; color: var(--channels-default, var(--text-muted)); }
+.veya-dmrow:hover { background: var(--background-modifier-hover); color: var(--interactive-hover, var(--text-normal)); }
+.veya-dmrow:focus-visible { outline: 2px solid #ccff00; outline-offset: -2px; }
+.veya-dmrow-av { position: relative; width: 32px; height: 32px; flex-shrink: 0; }
+.veya-dmrow-av img { width: 32px; height: 32px; border-radius: 50%; }
+.veya-dmrow-av i { position: absolute; right: -2px; bottom: -2px; width: 10px; height: 10px; border-radius: 50%; background: #23a55a; border: 3px solid var(--background-secondary, var(--background-base-lower)); }
+.veya-dmrow-txt { min-width: 0; flex: 1; }
+.veya-dmrow-name { display: flex; align-items: center; gap: 6px; font-size: 16px; font-weight: 500; line-height: 20px; white-space: nowrap; }
+.veya-dmrow-sub { font-size: 12px; line-height: 16px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.veya-dmrow.unread .veya-dmrow-name { color: var(--interactive-active, var(--header-primary)); font-weight: 600; }
+.veya-dmrow-badge { min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: #f23f43; color: #fff; font-size: 12px; font-weight: 700; display: grid; place-items: center; }
+.veya-inbox { display: flex; flex-direction: column; gap: 14px; max-height: 60vh; overflow-y: auto; }
+.veya-inbox-intro { display: flex; flex-direction: column; gap: 4px; padding-bottom: 12px; border-bottom: 1px solid var(--background-modifier-accent); }
+.veya-inbox-intro img { width: 64px; height: 64px; border-radius: 50%; }
+.veya-inbox-intro b { font-size: 22px; color: var(--header-primary, var(--text-strong)); }
+.veya-inbox-intro span { font-size: 13px; color: var(--text-muted); }
+.veya-inbox-msg { display: flex; gap: 12px; }

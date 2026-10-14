@@ -64,7 +64,7 @@ function writeVencordSettings({ provider, models }) {
     const veya = settings.plugins["VEYA-AI"] || {};
     veya.enabled = true;
     if (provider) veya.aiProvider = provider;
-    const map = { claude: "modelClaude", openai: "modelOpenAI", gemini: "modelGemini", deepseek: "modelDeepSeek", xai: "modelXai", mistral: "modelMistral", groq: "modelGroq", openrouter: "modelOpenRouter" };
+    const map = { claude: "modelClaude", openai: "modelOpenAI", gemini: "modelGemini", deepseek: "modelDeepSeek", xai: "modelXai", mistral: "modelMistral", groq: "modelGroq", openrouter: "modelOpenRouter", local: "modelLocal" };
     for (const [p, key] of Object.entries(map)) if (models && models[p]) veya[key] = models[p];
     veya.modelsMigrated = true;
     // Never store old plain-text keys here
@@ -195,11 +195,24 @@ async function removeLegacyRegistry() {
     await run("reg", ["delete", "HKCU\\Software\\VEYA-AI", "/f"]);
 }
 
-/** Delete the folder after this program exits (the running .exe can't delete itself) */
+/**
+ * Delete the folder after this program exits (the running .exe can't delete itself).
+ * Runs through a tiny VBScript with window style 0, so no console window pops up
+ * (Windows Terminal ignores windowsHide for detached cmd.exe).
+ */
 function deleteAfterExit(dir) {
     const { spawn } = require("child_process");
-    const cmd = `ping 127.0.0.1 -n 8 > nul & rmdir /s /q "${dir.replace(/"/g, "")}"`;
-    spawn("cmd.exe", ["/c", cmd], { detached: true, stdio: "ignore", windowsHide: true }).unref();
+    const nodeFs = require("fs");
+    const os = require("os");
+    const target = dir.replace(/"/g, "");
+    const vbs = path.join(os.tmpdir(), `veya-cleanup-${Date.now()}.vbs`);
+    const cmd = `cmd /c ping 127.0.0.1 -n 8 > nul & rmdir /s /q ""${target}"" & del /q ""${vbs}""`;
+    try {
+        nodeFs.writeFileSync(vbs, `CreateObject("WScript.Shell").Run "${cmd}", 0, False\r\n`);
+        spawn("wscript.exe", ["//B", "//Nologo", vbs], { detached: true, stdio: "ignore", windowsHide: true }).unref();
+    } catch {
+        spawn("cmd.exe", ["/c", cmd.slice(7).replace(/""/g, '"')], { detached: true, stdio: "ignore", windowsHide: true }).unref();
+    }
 }
 
 module.exports = {

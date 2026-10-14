@@ -18,6 +18,14 @@ export const PROVIDERS: { id: Provider; label: string; keyUrl: string; keyHint: 
     { id: "mistral",    label: "Mistral",    keyUrl: "https://console.mistral.ai/api-keys",          keyHint: "…",        models: ["mistral-medium-latest", "mistral-large-latest", "mistral-small-latest"], note: "Free tier available" },
     { id: "groq",       label: "Groq",       keyUrl: "https://console.groq.com/keys",                keyHint: "gsk_…",    models: ["openai/gpt-oss-120b", "llama-3.3-70b-versatile"], note: "Free tier, very fast" },
     { id: "openrouter", label: "OpenRouter", keyUrl: "https://openrouter.ai/keys",                   keyHint: "sk-or-…",  models: ["openrouter/auto"], note: "Hundreds of models with one key" },
+    { id: "local",      label: "Local AI (Ollama) · Beta", keyUrl: "https://ollama.com/download",            keyHint: "",         models: ["gemma3:4b", "llama3.2:3b", "qwen2.5:7b"], note: "Beta · free · no key · runs on your PC" },
+];
+
+/** Models offered for local AI (Ollama). Sizes = download size. */
+export const LOCAL_MODELS = [
+    { id: "llama3.2:3b", label: "Light – Llama 3.2 3B", size: "2.0 GB", ram: "8 GB RAM" },
+    { id: "gemma3:4b", label: "Recommended – Gemma 3 4B (also understands images)", size: "3.3 GB", ram: "8 GB RAM" },
+    { id: "qwen2.5:7b", label: "Strong – Qwen 2.5 7B", size: "4.7 GB", ram: "16 GB RAM" },
 ];
 
 export const settings = definePluginSettings({
@@ -33,6 +41,7 @@ export const settings = definePluginSettings({
             { label: "Mistral", value: "mistral" },
             { label: "Groq", value: "groq" },
             { label: "OpenRouter", value: "openrouter" },
+            { label: "Local AI (Ollama) · Beta", value: "local" },
         ],
     },
     modelClaude:     { type: OptionType.STRING, description: "Model for Claude (auto = best available)", default: "auto" },
@@ -43,6 +52,7 @@ export const settings = definePluginSettings({
     modelMistral:    { type: OptionType.STRING, description: "Model for Mistral", default: "auto" },
     modelGroq:       { type: OptionType.STRING, description: "Model for Groq", default: "auto" },
     modelOpenRouter: { type: OptionType.STRING, description: "Model for OpenRouter", default: "auto" },
+    modelLocal:      { type: OptionType.STRING, description: "Model for local AI (Ollama)", default: "auto" },
     modelsMigrated:  { type: OptionType.BOOLEAN, description: "", default: false, hidden: true },
     skippedUpdate:   { type: OptionType.STRING, description: "", default: "", hidden: true },
     aiSystemPrompt: {
@@ -76,6 +86,11 @@ export const settings = definePluginSettings({
     gameContext:    { type: OptionType.BOOLEAN, description: "VEYA knows which game you are currently playing", default: true },
     autoTranslate:  { type: OptionType.BOOLEAN, description: "Automatically translate messages in other languages", default: false },
     motionEffects:  { type: OptionType.BOOLEAN, description: "VEYA Motion: smooth animations across all of Discord", default: false, onChange: (v: boolean) => document.body.classList.toggle("veya-motion", !!v) },
+    startupIntro:   { type: OptionType.BOOLEAN, description: "VEYA logo animation when Discord starts", default: true },
+    tldrButton:     { type: OptionType.BOOLEAN, description: "TL;DR button under long messages", default: true },
+    smartReminders: { type: OptionType.BOOLEAN, description: "Suggest a reminder when a message mentions a time", default: true },
+    profileBadge:   { type: OptionType.BOOLEAN, description: "VEYA badge (only other VEYA users see it)", default: true },
+    tourDone:       { type: OptionType.BOOLEAN, description: "First-start tour finished", default: false, hidden: true },
     showBadge:      { type: OptionType.BOOLEAN, description: "", default: false, hidden: true },
     writerButton:   { type: OptionType.BOOLEAN, description: "Writing helper button in the message box", default: true },
     streamResponses: { type: OptionType.BOOLEAN, description: "Show replies word by word (streaming)", default: true },
@@ -106,7 +121,7 @@ export function currentProvider(): Provider {
 
 const MODEL_KEY: Record<Provider, string> = {
     claude: "modelClaude", openai: "modelOpenAI", gemini: "modelGemini", deepseek: "modelDeepSeek",
-    xai: "modelXai", mistral: "modelMistral", groq: "modelGroq", openrouter: "modelOpenRouter",
+    xai: "modelXai", mistral: "modelMistral", groq: "modelGroq", openrouter: "modelOpenRouter", local: "modelLocal",
 };
 
 /** "auto" = VEYA picks the best model the key can use */
