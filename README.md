@@ -4,13 +4,17 @@
 
 <h1 align="center">VEYA-AI</h1>
 
+<p align="center"><sub>a <b>Project VEYA</b> project</sub></p>
+
 <p align="center"><b>AI for Discord.</b> A <a href="https://github.com/Vendicated/Vencord">Vencord</a>-based client mod with a built-in AI assistant – chat, translate, catch up, voice messages and a server builder.</p>
 
 ---
 
 ## Community
 
-- Support Discord: [discord.gg/veya-ai](https://discord.gg/veya-ai)
+VEYA AI is part of **Project VEYA** – our home for Discord tools.
+
+- Project VEYA Discord: [discord.gg/veya-ai](https://discord.gg/veya-ai)
 - Instagram: [@veya_ai_](https://www.instagram.com/veya_ai_/)
 - TikTok: [@veya_ai_](https://www.tiktok.com/@veya_ai_)
 

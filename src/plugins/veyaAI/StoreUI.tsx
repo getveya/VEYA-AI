@@ -1211,16 +1211,16 @@ function AboutTab() {
     return (
         <div>
             <div style={S.card}>
-                <div style={S.row}><VeyaLogo size={40} /><div><div style={S.title}>VEYA-AI {info?.version && `v${info.version}`}</div><div style={S.muted}>Vencord build with AI built in</div></div></div>
+                <div style={S.row}><VeyaLogo size={40} /><div><div style={S.title}>VEYA-AI {info?.version && `v${info.version}`}</div><div style={S.muted}>Vencord build with AI built in · by Project VEYA</div></div></div>
                 {info && <div style={S.muted}>Installed in: <code>{info.installDir}</code></div>}
                 <div style={S.muted}>Repair or uninstall: via "VEYA-AI" in the Start menu or under Windows → Apps.</div>
                 <UpdateCheck />
             </div>
             <div style={S.card}>
                 <div style={S.title}>Community & support</div>
-                <div style={S.muted}>Questions, bugs or ideas? Join the support Discord or follow VEYA for updates.</div>
+                <div style={S.muted}>VEYA AI is a project by Project VEYA. Questions, bugs or ideas? Join the Project VEYA Discord or follow us for updates.</div>
                 <div style={S.row}>
-                    <a href="https://discord.gg/veya-ai" target="_blank" rel="noreferrer" style={{ ...S.btn("accent"), textDecoration: "none" }}><VIcon name="chat" size={14} dot={false} /> Support Discord</a>
+                    <a href="https://discord.gg/veya-ai" target="_blank" rel="noreferrer" style={{ ...S.btn("accent"), textDecoration: "none" }}><VIcon name="chat" size={14} dot={false} /> Project VEYA Discord</a>
                     <a href="https://www.instagram.com/veya_ai_/" target="_blank" rel="noreferrer" style={{ ...S.btn("ghost"), textDecoration: "none" }}><VIcon name="link" size={14} /> Instagram @veya_ai_</a>
                     <a href="https://www.tiktok.com/@veya_ai_" target="_blank" rel="noreferrer" style={{ ...S.btn("ghost"), textDecoration: "none" }}><VIcon name="link" size={14} /> TikTok @veya_ai_</a>
                 </div>

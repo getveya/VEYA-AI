@@ -87,7 +87,7 @@ export function renderCard(title: string, body: string, opts: { rows?: { label: 
         }
     }
     ctx.fillStyle = "#5d6356"; ctx.font = `600 20px ${font}`;
-    ctx.fillText("Made with VEYA AI · free Discord mod · discord.gg/veya-ai", P, H - 40);
+    ctx.fillText("Made with VEYA AI · by Project VEYA · discord.gg/veya-ai", P, H - 40);
     return c.toDataURL("image/png");
 }
 

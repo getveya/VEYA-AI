@@ -117,6 +117,7 @@ body::before{
 @keyframes pulse{0%,100%{transform:scale(0.9);opacity:0.5}50%{transform:scale(1.1);opacity:1}}
 .sb-name{font-family:var(--display);font-size:15px;font-weight:800;letter-spacing:0.04em;color:var(--text)}
 .sb-name span{color:var(--accent)}
+.sb-by{font-size:9.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-top:3px}
 .sb-ver{font-size:10px;color:var(--text3);letter-spacing:0.05em}
 .step{
   display:flex;align-items:center;gap:12px;padding:9px 16px;
@@ -456,6 +457,7 @@ body.mode-manage .step-manage{display:flex}
         </div>
         <div class="sb-name">VEYA<span>AI</span></div>
         <div class="sb-ver" id="sbVer">VERSION –</div>
+        <div class="sb-by">by Project VEYA</div>
       </div>
       <div class="step active" id="s1"><div class="step-num" id="sn1">1</div><div class="step-lbl">Welcome</div></div>
       <div class="step" id="s2"><div class="step-num" id="sn2">2</div><div class="step-lbl">API keys</div></div>
@@ -638,7 +640,7 @@ body.mode-manage .step-manage{display:flex}
       <div class="page" id="p7">
         <div class="ph">
           <div class="ph-title">Local AI <span class="beta">BETA</span></div>
-          <div class="ph-sub">Free AI that runs on your PC with Ollama – no API key, nothing leaves your computer. This feature is new – please report problems in our Discord.</div>
+          <div class="ph-sub">Free AI that runs on your PC with Ollama – no API key, nothing leaves your computer. This feature is new – please report problems in the Project VEYA Discord.</div>
           <div class="ph-div"></div>
         </div>
         <div class="scroll" style="padding-top:0">
@@ -718,9 +720,9 @@ body.mode-manage .step-manage{display:flex}
         </div>
         <div class="info-sec">
           <div class="info-h">Community &amp; support</div>
-          <p>Questions, bugs or ideas? Join the support Discord or follow VEYA for updates.</p>
+          <p>VEYA AI is a project by <b>Project VEYA</b>. Questions, bugs or ideas? Join the Project VEYA Discord or follow us for updates.</p>
           <div class="info-links">
-            <button type="button" class="chip" onclick="openLink(LINKS.discord)"><i data-ic="chat" data-size="12"></i> Support Discord</button>
+            <button type="button" class="chip" onclick="openLink(LINKS.discord)"><i data-ic="chat" data-size="12"></i> Project VEYA Discord</button>
             <button type="button" class="chip" onclick="openLink(LINKS.instagram)"><i data-ic="link" data-size="12"></i> Instagram @veya_ai_</button>
             <button type="button" class="chip" onclick="openLink(LINKS.tiktok)"><i data-ic="link" data-size="12"></i> TikTok @veya_ai_</button>
           </div>
