@@ -14,7 +14,7 @@
 
 VEYA AI is part of **Project VEYA** – our home for Discord tools.
 
-- Project VEYA Discord: [discord.gg/veya-ai](https://discord.gg/veya-ai)
+- Project VEYA Discord: [discord.gg/projectveya](https://discord.gg/projectveya)
 - Instagram: [@veya_ai_](https://www.instagram.com/veya_ai_/)
 - TikTok: [@veya_ai_](https://www.tiktok.com/@veya_ai_)
 

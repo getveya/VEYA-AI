@@ -1220,7 +1220,7 @@ function AboutTab() {
                 <div style={S.title}>Community & support</div>
                 <div style={S.muted}>VEYA AI is a project by Project VEYA. Questions, bugs or ideas? Join the Project VEYA Discord or follow us for updates.</div>
                 <div style={S.row}>
-                    <a href="https://discord.gg/veya-ai" target="_blank" rel="noreferrer" style={{ ...S.btn("accent"), textDecoration: "none" }}><VIcon name="chat" size={14} dot={false} /> Project VEYA Discord</a>
+                    <a href="https://discord.gg/projectveya" target="_blank" rel="noreferrer" style={{ ...S.btn("accent"), textDecoration: "none" }}><VIcon name="chat" size={14} dot={false} /> Project VEYA Discord</a>
                     <a href="https://www.instagram.com/veya_ai_/" target="_blank" rel="noreferrer" style={{ ...S.btn("ghost"), textDecoration: "none" }}><VIcon name="link" size={14} /> Instagram @veya_ai_</a>
                     <a href="https://www.tiktok.com/@veya_ai_" target="_blank" rel="noreferrer" style={{ ...S.btn("ghost"), textDecoration: "none" }}><VIcon name="link" size={14} /> TikTok @veya_ai_</a>
                 </div>

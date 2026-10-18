@@ -87,7 +87,7 @@ export function renderCard(title: string, body: string, opts: { rows?: { label: 
         }
     }
     ctx.fillStyle = "#5d6356"; ctx.font = `600 20px ${font}`;
-    ctx.fillText("Made with VEYA AI · by Project VEYA · discord.gg/veya-ai", P, H - 40);
+    ctx.fillText("Made with VEYA AI · by Project VEYA · discord.gg/projectveya", P, H - 40);
     return c.toDataURL("image/png");
 }
 
@@ -396,7 +396,7 @@ const badge: ProfileBadge = {
     description: "VEYA AI user",
     iconSrc: BADGE_ICON,
     position: BadgePosition.END,
-    link: "https://discord.gg/veya-ai",
+    link: "https://discord.gg/projectveya",
     shouldShow: ({ userId }) => settings.store.profileBadge && (badgeIds.has(userId) || userId === UserStore.getCurrentUser()?.id),
 };
 
